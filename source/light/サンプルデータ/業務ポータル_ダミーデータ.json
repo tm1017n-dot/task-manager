@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 6,
+  "appVersion": "10.1.0",
+  "updatedAt": "2026-09-17T09:00:00.000Z",
+  "sharedRevision": 1,
+  "users": [
+    {
+      "id": "u-sato",
+      "name": "佐藤",
+      "active": true,
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "id": "u-tanaka",
+      "name": "田中",
+      "active": true,
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "id": "u-suzuki",
+      "name": "鈴木",
+      "active": true,
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "activityLog": [
+    {
+      "id": "a-1",
+      "at": "2026-09-17T09:00:00.000Z",
+      "userId": "u-tanaka",
+      "entityType": "task",
+      "entityId": "t-prototype",
+      "summary": "「集計作業の自動化案を試作」を登録"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "n-1",
+      "userId": "u-sato",
+      "type": "task_assigned",
+      "title": "タスクの担当者になりました",
+      "message": "上半期受診実績を集計",
+      "targetType": "task",
+      "targetId": "t-report",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "readAt": "",
+      "dedupeKey": "sample-task-assigned"
+    }
+  ],
+  "workCategories": [
+    {
+      "id": "wc-health",
+      "name": "保健事業",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "id": "wc-admin",
+      "name": "予算・契約",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "id": "wc-system",
+      "name": "システム・改善",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "works": [
+    {
+      "id": "w-checkup",
+      "name": "健康診査",
+      "categoryId": "wc-health",
+      "summary": "健診の準備、実施、結果集計を管理する業務",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "id": "w-contract",
+      "name": "委託契約",
+      "categoryId": "wc-admin",
+      "summary": "委託契約の更新と進行管理",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "id": "w-system",
+      "name": "業務システム改善",
+      "categoryId": "wc-system",
+      "summary": "業務手順とシステムの改善",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "tasks": [
+    {
+      "fiscalYear": 2026,
+      "carryoverOverride": null,
+      "caseId": "",
+      "category": "集計",
+      "status": "進行中",
+      "priority": "高",
+      "assigneeId": "u-sato",
+      "startDate": "2026-09-14",
+      "dueDate": "2026-09-25",
+      "completedDate": "",
+      "notes": "集計後に前年同期比も確認する。",
+      "documentUrl": "",
+      "checklist": [
+        {
+          "id": "ch-1",
+          "text": "対象データを抽出",
+          "done": true
+        },
+        {
+          "id": "ch-2",
+          "text": "重複と欠損を確認",
+          "done": false
+        },
+        {
+          "id": "ch-3",
+          "text": "前年同期と比較",
+          "done": false
+        }
+      ],
+      "copiedFromId": "",
+      "repeatRuleId": "",
+      "repeatOccurrenceKey": "",
+      "id": "t-report",
+      "title": "上半期受診実績を集計",
+      "summary": "4月から9月までの実績を確認する",
+      "workId": "w-checkup",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "fiscalYear": 2026,
+      "carryoverOverride": null,
+      "caseId": "c-provider",
+      "category": "契約",
+      "status": "確認待ち",
+      "priority": "高",
+      "assigneeId": "u-suzuki",
+      "startDate": "2026-09-01",
+      "dueDate": "2026-09-30",
+      "completedDate": "",
+      "notes": "",
+      "documentUrl": "",
+      "checklist": [
+        {
+          "id": "ch-4",
+          "text": "単価を確認",
+          "done": true
+        },
+        {
+          "id": "ch-5",
+          "text": "契約案へ反映",
+          "done": false
+        }
+      ],
+      "copiedFromId": "",
+      "repeatRuleId": "",
+      "repeatOccurrenceKey": "",
+      "id": "t-contract",
+      "title": "委託条件の確認事項を整理",
+      "summary": "先方回答を踏まえて条件案を更新する",
+      "workId": "w-contract",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "fiscalYear": 2026,
+      "carryoverOverride": null,
+      "caseId": "",
+      "category": "改善",
+      "status": "未着手",
+      "priority": "中",
+      "assigneeId": "u-tanaka",
+      "startDate": "2026-10-01",
+      "dueDate": "2026-10-20",
+      "completedDate": "",
+      "notes": "",
+      "documentUrl": "",
+      "checklist": [
+        {
+          "id": "ch-6",
+          "text": "現行手順を整理",
+          "done": false
+        },
+        {
+          "id": "ch-7",
+          "text": "試作",
+          "done": false
+        }
+      ],
+      "copiedFromId": "",
+      "repeatRuleId": "rr-weekly",
+      "repeatOccurrenceKey": "",
+      "id": "t-prototype",
+      "title": "集計作業の自動化案を試作",
+      "summary": "定型処理の時間短縮を検証する",
+      "workId": "w-system",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "fiscalYear": 2026,
+      "carryoverOverride": null,
+      "caseId": "",
+      "category": "報告",
+      "status": "完了",
+      "priority": "中",
+      "assigneeId": "u-sato",
+      "startDate": "2026-04-06",
+      "dueDate": "2026-04-15",
+      "completedDate": "2026-04-14",
+      "notes": "",
+      "documentUrl": "",
+      "checklist": [],
+      "copiedFromId": "",
+      "repeatRuleId": "",
+      "repeatOccurrenceKey": "",
+      "id": "t-finished",
+      "title": "4月実績報告を提出",
+      "summary": "月次報告",
+      "workId": "w-checkup",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "cases": [
+    {
+      "id": "c-provider",
+      "title": "令和9年度 健診委託条件の調整",
+      "fiscalYear": 2026,
+      "workId": "w-contract",
+      "status": "対応中",
+      "priority": "高",
+      "assigneeId": "u-suzuki",
+      "openedDate": "2026-08-24",
+      "dueDate": "2026-10-30",
+      "summary": "次年度の委託条件を関係機関と調整する",
+      "situation": "確認事項を送付し回答待ち",
+      "nextAction": "回答を契約案へ反映する",
+      "resolution": "",
+      "copiedFromId": "",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "records": [
+    {
+      "id": "r-1",
+      "date": "2026-09-08",
+      "type": "メール",
+      "title": "次年度委託条件の確認依頼",
+      "counterparty": "委託先担当者",
+      "authorId": "u-suzuki",
+      "responseAssigneeId": "u-suzuki",
+      "workId": "w-contract",
+      "caseId": "c-provider",
+      "taskId": "t-contract",
+      "content": "次年度契約の確認事項を送付した。",
+      "decision": "回答後に契約案へ反映する。",
+      "followUp": "9月末までに回答状況を確認する。",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "manuals": [
+    {
+      "id": "m-1",
+      "title": "月次実績集計の手順",
+      "workId": "w-checkup",
+      "type": "手順",
+      "summary": "月次報告を作成する標準手順",
+      "body": "1. 対象期間のデータを抽出する\n2. 重複と欠損を確認する\n3. 前月・前年同月と比較する\n4. 差異の理由を確認する\n5. 報告用ファイルを保存する",
+      "keywords": "月次,集計,報告",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "id": "m-2",
+      "title": "共有JSONで競合が表示されたとき",
+      "workId": "w-system",
+      "type": "FAQ",
+      "summary": "共同利用時の競合解消手順",
+      "body": "1. 入力内容をメモする\n2. 共同利用画面を開く\n3. 共有データを再読込する\n4. 最新内容を確認して編集し直す",
+      "keywords": "共有,競合,再読込",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "links": [
+    {
+      "id": "l-1",
+      "title": "課内共有フォルダー",
+      "homeLabel": "共有フォルダー",
+      "category": "共有フォルダ",
+      "target": "\\\\fileserver\\section\\shared",
+      "description": "日常的に使用する共有フォルダー（ダミー）",
+      "home": true,
+      "favorite": true,
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "id": "l-2",
+      "title": "庁内ポータル",
+      "homeLabel": "庁内ポータル",
+      "category": "庁内システム",
+      "target": "https://portal.example.local/",
+      "description": "お知らせと規程検索（ダミー）",
+      "home": true,
+      "favorite": false,
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "repeatRules": [
+    {
+      "id": "rr-weekly",
+      "title": "週次進捗整理",
+      "workId": "w-system",
+      "category": "定例",
+      "priority": "低",
+      "summary": "毎週末に進捗を整理する",
+      "type": "weekly",
+      "weekday": 5,
+      "monthDay": 1,
+      "checklist": [
+        "未完了を確認",
+        "翌週予定を確認"
+      ],
+      "active": true,
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "trash": [],
+  "journalEntries": [
+    {
+      "id": "j-1",
+      "date": "2026-09-17",
+      "time": "09:15",
+      "ownerId": "u-sato",
+      "workId": "w-checkup",
+      "caseId": "",
+      "taskId": "t-report",
+      "content": "上半期実績の集計表を更新",
+      "minutes": 35,
+      "note": "欠損データ2件を確認中",
+      "taskStatusBefore": "未着手",
+      "taskStatusAfter": "進行中",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    },
+    {
+      "id": "j-2",
+      "date": "2026-09-17",
+      "time": "14:10",
+      "ownerId": "u-tanaka",
+      "workId": "w-system",
+      "caseId": "",
+      "taskId": "t-prototype",
+      "content": "現行集計手順を確認",
+      "minutes": 25,
+      "note": "繰り返し処理を洗い出した",
+      "taskStatusBefore": "未着手",
+      "taskStatusAfter": "未着手",
+      "createdAt": "2026-09-17T09:00:00.000Z",
+      "updatedAt": "2026-09-17T09:00:00.000Z"
+    }
+  ],
+  "settings": {
+    "selectedFiscalYear": 2026,
+    "lastBackupAt": "",
+    "backupHistory": [],
+    "yearChecklistDone": {},
+    "searchAllYears": false,
+    "ganttCollapsedCategories": []
+  }
+}
