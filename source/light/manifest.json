@@ -1,42 +1,42 @@
 {
-  "package": "業務ポータル v10.1 ライト完成版",
-  "generatedAt": "2026-09-18",
+  "package": "業務ポータル 最新HTML版（v10.1互換） ライト",
+  "generatedAt": "2026-09-19",
   "files": {
     "index.html": {
-      "bytes": 270518,
-      "sha256": "00ae0144bb91a7e9cf4cf86ccc6d9c4a33132d91316de42a8e841d84701d7fbd"
+      "bytes": 290223,
+      "sha256": "366ab089273c3e5eac79f0eec4195bbc4463e4ba607409499d5a74b539c1f648"
     },
     "icon.ico": {
       "bytes": 14376,
       "sha256": "8a5bd933f38a31d2415efe31ea447e35b7cd2b5f95a657a6ff77b77420b0da59"
     },
     "README.txt": {
-      "bytes": 838,
-      "sha256": "d505e1bc5f1a63c666990f5163f01a6fafd2fb380a32421e1f0d321f2bef69e5"
+      "bytes": 983,
+      "sha256": "d35f44fe30c3954656d16211e6482a087346b42de17eadf7b9cfc0eaaf235426"
     },
     "ドキュメント/00_導入ガイド.txt": {
       "bytes": 983,
       "sha256": "c66dfbe9549a2ebd291abc93aad0c37846d3e061f564e6d9ebaa623bf4ec7ab9"
     },
     "ドキュメント/01_利用者マニュアル.txt": {
-      "bytes": 2198,
-      "sha256": "30423662aa169725aa3ec5b011518a056a70e844b22ce128276b51f4f5f484d2"
+      "bytes": 2542,
+      "sha256": "882d2693f2e6c5b249156908256b12714116769b1cb6175afa7611360cbfb454"
     },
     "ドキュメント/02_管理者・共同利用マニュアル.txt": {
-      "bytes": 1698,
-      "sha256": "1f2554cfb31b2aadfac5baa5d53d2ebaa470a9ef29ccb6a11506be6d2a5e1cc2"
+      "bytes": 2095,
+      "sha256": "9954b78104757181f1d495ae01911e300dadf33b167c88948dc64f6210124a23"
     },
     "ドキュメント/03_設計書.txt": {
-      "bytes": 2055,
-      "sha256": "7c0590c33ef6e6ac7e233c3f355df1b894604da7518966aeecba8e79841ca7ce"
+      "bytes": 2694,
+      "sha256": "5af7d1604a152e693c12e86f6b9da81d18ba133e71222110e008295ade7a3046"
     },
     "ドキュメント/04_運用・保守マニュアル.txt": {
-      "bytes": 1540,
-      "sha256": "88b7e962beb01bdc6f45dfbc37ae53f42238c2cd20352a63127dc0c9f3c59a5b"
+      "bytes": 1735,
+      "sha256": "ee6896721523a443b383b04f87266975c5e79cc7877a0d8192b0bcc1f730a773"
     },
     "ドキュメント/05_受入確認チェックリスト.txt": {
-      "bytes": 1134,
-      "sha256": "696cb6e3a6aeaa0b370da0a43acb77c3f1a77de02067b8dfe4dabec3cea75160"
+      "bytes": 1323,
+      "sha256": "58af3949c72a713c9e5ac7381583d418c4569f9a76cf15fa2cafe73a3c3ed487"
     },
     "サンプルデータ/業務ポータル_ダミーデータ.json": {
       "bytes": 11259,
