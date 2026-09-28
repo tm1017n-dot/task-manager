@@ -6,6 +6,7 @@
 <title>業務ポータル</title>
 <link rel="icon" type="image/x-icon" href="icon.ico">
 <link rel="shortcut icon" href="icon.ico">
+<script>try{const savedTheme=localStorage.getItem('personal_work_portal_theme');if(savedTheme==='light'||savedTheme==='dark')document.documentElement.dataset.theme=savedTheme}catch(e){}</script>
 <style>
 :root{
   --bg:#f4f6f8;--panel:#fff;--panel2:#f8fafc;--text:#17202a;--muted:#667085;
@@ -500,7 +501,19 @@ dialog{background:var(--panel);color:var(--text);border-color:var(--line);border
 @media(max-width:1180px){.compact-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.home-daily-grid{grid-template-columns:1fr}.topbar{padding:8px 20px}.content{padding:24px 20px}.page-actions{margin-left:0}}
 @media(max-width:760px){.content{padding:22px 14px}.topbar{padding:6px 12px}.top-fixed .breadcrumb-bar,.top-alerts{padding-inline:12px}.page-head h1{font-size:25px}.page-actions{margin-top:0}.compact-kpis{gap:10px}.kpi{padding:14px}.kpi-value{font-size:30px}.panel{padding:16px}.sidebar{width:224px}.shared-status{max-width:180px}.card-list,.link-grid{grid-template-columns:1fr}}
 @media print{html,body{background:white;color:black}.card,td,th{background:white!important;color:black!important}.top-fixed{display:none}}
-:root{color-scheme:dark;--bg:#10141c;--panel:#1a202c;--panel2:#202838;--text:#edf1f8;--muted:#b3bfd2;--line:#46536b;--accent:#98aeff;--accent-soft:#293759;--danger:#ff9eae}.btn.primary,.search-submit,.scope-switch button.active{color:#101a36}.notice{background:#362e20;border-color:#80704b;color:#f3d28c}.notice.info{background:#243249;border-color:#52688f;color:#c6d8ff}.badge.red{background:#482d39;color:#ffb3c0}.badge.amber{background:#403724;color:#f5d491}.help-note{background:var(--accent-soft);color:var(--text)}.btn.danger:hover{background:#482d39}.cal-task.due{background:#482d39;color:#ffb3c0}/* Refined workspace — self-contained and compatible with v10.1. */
+
+/* Dark palette is bundled in both stand-alone HTML files. */
+html[data-theme="light"]{color-scheme:light}
+html[data-theme="dark"]{color-scheme:dark;--bg:#10141c;--panel:#1a202c;--panel2:#202838;--text:#edf1f8;--muted:#b3bfd2;--line:#46536b;--accent:#98aeff;--accent-soft:#293759;--danger:#ff9eae}
+html[data-theme="dark"] .btn.primary,html[data-theme="dark"] .search-submit,html[data-theme="dark"] .scope-switch button.active{color:#101a36}
+html[data-theme="dark"] .notice{background:#362e20;border-color:#80704b;color:#f3d28c}
+html[data-theme="dark"] .notice.info{background:#243249;border-color:#52688f;color:#c6d8ff}
+html[data-theme="dark"] .badge.red{background:#482d39;color:#ffb3c0}
+html[data-theme="dark"] .badge.amber{background:#403724;color:#f5d491}
+html[data-theme="dark"] .help-note{background:var(--accent-soft);color:var(--text)}
+html[data-theme="dark"] .btn.danger:hover{background:#482d39}
+html[data-theme="dark"] .cal-task.due{background:#482d39;color:#ffb3c0}
+/* Refined workspace — self-contained and compatible with v10.1. */
 :root{--bg:#f3f4f7;--panel:#fff;--panel2:#f7f8fb;--text:#202637;--muted:#626d81;--line:#aab5c6;--accent:#3e5ee5;--accent-soft:#edf1ff;--sidebar:232px;--nav-bg:#141b2c;--nav-text:#bcc7da;--elevation:0 3px 6px #18243c05,0 14px 32px #18243c08}
 html[data-theme=dark]{--bg:#11151e;--panel:#1b2230;--panel2:#212a3a;--text:#f0f3fa;--muted:#b2bed2;--line:#667896;--accent:#a6b9ff;--accent-soft:#29395e;--nav-bg:#101520;--nav-text:#bdc9df;--elevation:0 8px 24px #00000018}
 html,body{font-family:"Yu Gothic UI","Meiryo",system-ui,sans-serif;letter-spacing:.01em}
@@ -573,7 +586,7 @@ html[data-theme=dark] .sidebar{border-color:#38445d}html[data-theme=dark] .btn.p
       <div class="year-select"><label for="globalFiscalYear">年度</label><select id="globalFiscalYear"></select></div>
       <div class="year-select"><label for="currentUserSelect">自分</label><select id="currentUserSelect"><option value="">未設定</option></select></div>
       <div class="shared-status" id="sharedStatus"><span class="shared-dot"></span><span id="sharedStatusText">ローカル</span></div>
-      <div class="save-status" id="saveStatus" role="status" aria-live="polite"><span class="save-dot"></span><span id="saveStatusText">読み込み中</span></div><div class="top-actions"><button type="button" class="btn small notification-button" id="notificationBtn" aria-label="通知" title="通知">🔔<span class="notification-badge hidden" id="notificationBadge">0</span></button><button class="btn small" id="quickJournalBtn">＋ 日誌</button></div>
+      <div class="save-status" id="saveStatus" role="status" aria-live="polite"><span class="save-dot"></span><span id="saveStatusText">読み込み中</span></div><div class="top-actions"><button type="button" class="btn small" id="themeToggleBtn" aria-label="配色を切り替える">☾ ダーク</button><button type="button" class="btn small" id="outlookSyncBtn" title="自分の担当タスクをOutlookへ反映">Outlookへ反映</button><button type="button" class="btn small notification-button" id="notificationBtn" aria-label="通知" title="通知">🔔<span class="notification-badge hidden" id="notificationBadge">0</span></button><button class="btn small" id="quickJournalBtn">＋ 日誌</button></div>
     </header>
     <nav class="breadcrumb-bar hidden" id="breadcrumbBar" aria-label="現在位置"></nav>
     <div class="top-alerts hidden" id="topAlerts" aria-label="確認事項">
@@ -772,7 +785,8 @@ html[data-theme=dark] .sidebar{border-color:#38445d}html[data-theme=dark] .btn.p
         <div class="card panel help-section"><h2>5. 通知</h2><p>タスク担当者、案件の主担当者、対応記録の次の対応担当者に設定されると、上部の通知ボタンに未読件数が表示されます。期限前日と期限超過のタスクも通知します。通知は共有JSONに保存され、選択中の「自分」に宛てたものだけを表示します。</p></div>
         <div class="card panel help-section"><h2>6. 同時編集時</h2><p>共有JSONにはrevision番号があります。保存前に最新revisionを確認し、他の人が先に保存していた場合は上書きしません。「共有データを再読込」して最新状態を確認してから編集し直してください。</p><div class="help-note">これは数名程度・低頻度更新向けの競合検知です。データベースのような完全な排他制御ではないため、同じレコードを複数人が同時に編集する運用は避けてください。</div></div>
         <div class="card panel help-section"><h2>7. バックアップ</h2><p>共有JSONとは別に、データ管理からJSONバックアップを定期的に取得してください。業務日誌は個人保存なので、個人バックアップにも含まれます。</p></div>
-        <div class="card panel help-section"><h2>8. ショートカット</h2><p><b>Ctrl+K</b> 横断検索 / <b>Ctrl+N</b> タスク追加 / <b>Ctrl+Shift+J</b> 業務日誌 / <b>Esc</b> ダイアログを閉じる</p></div>
+        <div class="card panel help-section"><h2>8. 配色とOutlook予定表</h2><p>上部の「ダーク／ライト」で画面の配色を切り替えます。従来版Outlookの連係を各PCに設定した場合、「自分」を選択し、共有JSONへ接続してから「Outlookへ反映」を押してください。期限のある未完了タスクを専用予定表へ反映します。予定表への連係は一方向で、業務日誌と個人メモは含みません。</p></div>
+        <div class="card panel help-section"><h2>9. ショートカット</h2><p><b>Ctrl+K</b> 横断検索 / <b>Ctrl+N</b> タスク追加 / <b>Ctrl+Shift+J</b> 業務日誌 / <b>Esc</b> ダイアログを閉じる</p></div>
       </section>
 <section class="page" id="page-data">
         <div class="page-head"><div><h1>データ管理</h1><p>バックアップ、出力、削除済みデータ、移行など、日常操作以外の管理機能をまとめています。</p></div></div>
@@ -976,6 +990,7 @@ const GANTT_TASKS_KEY='personal_work_portal_gantt_show_tasks';
 const CURRENT_USER_KEY='personal_work_portal_current_user';
 const HOME_SCOPE_KEY='personal_work_portal_home_scope';
 const SHARED_HANDLE_KEY='shared-file-handle';
+const THEME_KEY='personal_work_portal_theme';
 
 const BACKUP_WARN_DAYS=30;
 const BACKUP_HISTORY_LIMIT=5;
@@ -1109,7 +1124,7 @@ function sharedSnapshot(){const x=sharedDataObject(0);x.updatedAt='';x.sharedRev
 function setSharedStatus(kind,text){const el=q('sharedStatus'),txt=q('sharedStatusText');if(el){el.classList.remove('connected','error');if(kind)el.classList.add(kind)}if(txt)txt.textContent=text;if(q('sharedConnectionInfo'))q('sharedConnectionInfo').innerHTML=`状態：<b>${esc(text)}</b><br>revision：${sharedRevisionLoaded||0}<br>業務日誌：このPCに個人保存`}
 async function ensureSharedPermission(handle,request=false){if(!handle)return false;try{const opts={mode:'readwrite'};if((await handle.queryPermission(opts))==='granted')return true;if(request&&(await handle.requestPermission(opts))==='granted')return true}catch(e){}return false}
 async function readSharedHandle(handle){const file=await handle.getFile(),text=await file.text();if(!text.trim())return null;return JSON.parse(text)}
-function mergeSharedIntoLocal(raw){const localJournals=state.journalEntries||[],localSettings=state.settings||defaultSettings(),journalTrash=(state.trash||[]).filter(x=>x.type==='journal');const incoming=normalizeState(raw||{});incoming.journalEntries=localJournals;incoming.settings=localSettings;incoming.trash=[...(incoming.trash||[]).filter(x=>x.type!=='journal'),...journalTrash];state=incoming;selectedFiscalYear=state.settings.selectedFiscalYear||fiscalYearFromDate(today());sharedRevisionLoaded=state.sharedRevision||0;lastSharedSnapshot=sharedSnapshot();if(currentUserId&&!byId(state.users,currentUserId))currentUserId='';refreshCurrentUserControls()}
+function mergeSharedIntoLocal(raw){const localJournals=state.journalEntries||[],localSettings=state.settings||defaultSettings(),journalTrash=(state.trash||[]).filter(x=>x.type==='journal');const incoming=normalizeState(raw||{});incoming.journalEntries=localJournals;incoming.settings=localSettings;incoming.trash=[...(incoming.trash||[]).filter(x=>x.type!=='journal'),...journalTrash];state=incoming;selectedFiscalYear=state.settings.selectedFiscalYear||fiscalYearFromDate(today());sharedRevisionLoaded=state.sharedRevision||0;lastSharedSnapshot=sharedSnapshot();sharedConflict=false;if(currentUserId&&!byId(state.users,currentUserId))currentUserId='';refreshCurrentUserControls()}
 async function loadSharedFile(handle,{requestPermission=true}={}){if(!handle)return false;if(!await ensureSharedPermission(handle,requestPermission)){setSharedStatus('error','共有JSONの権限がありません');return false}try{const raw=await readSharedHandle(handle);if(raw&&raw.format&&raw.format!=='personal-work-portal-shared')throw new Error('共有JSON形式ではありません');if(raw)mergeSharedIntoLocal(raw);sharedFileHandle=handle;await idbPutKey(SHARED_HANDLE_KEY,handle);setSharedStatus('connected',`共有接続中：${handle.name||'shared-data.json'}`);ensureDueNotifications();await persist({silent:true});renderAll();return true}catch(e){console.error(e);setSharedStatus('error','共有JSON読込失敗');toast('共有JSONを読み込めませんでした。','error');return false}}
 async function writeSharedIfChanged(){if(!sharedFileHandle)return {ok:true,shared:false};const snap=sharedSnapshot();if(snap===lastSharedSnapshot)return {ok:true,shared:false};if(!await ensureSharedPermission(sharedFileHandle,true))return {ok:false,reason:'permission'};try{const current=await readSharedHandle(sharedFileHandle);const currentRev=Math.max(0,Number(current?.sharedRevision)||0);if(current&&currentRev!==sharedRevisionLoaded){sharedConflict=true;setSharedStatus('error',`競合：共有側 revision ${currentRev}`);alert('他の利用者が先に共有データを更新しています。上書きせず停止しました。「共同利用」→「共有データを再読込」で最新状態を読み込んでください。');return {ok:false,reason:'conflict'}}const nextRev=sharedRevisionLoaded+1,obj=sharedDataObject(nextRev),w=await sharedFileHandle.createWritable();await w.write(JSON.stringify(obj,null,2));await w.close();sharedRevisionLoaded=nextRev;state.sharedRevision=nextRev;lastSharedSnapshot=sharedSnapshot();sharedConflict=false;setSharedStatus('connected',`共有接続中：${sharedFileHandle.name||'shared-data.json'}`);return {ok:true,shared:true}}catch(e){console.error(e);setSharedStatus('error','共有JSON保存失敗');return {ok:false,reason:'write'}}}
 async function saveLocalCache(){state.updatedAt=nowIso();state.appVersion=APP_VERSION;state.schemaVersion=SCHEMA_VERSION;state.settings.selectedFiscalYear=selectedFiscalYear;try{await idbPut(state,DB_NAME);try{localStorage.removeItem(STORAGE_KEY)}catch(e){}return true}catch(idbError){try{const json=JSON.stringify(state),bytes=new Blob([json]).size;if(bytes>LOCALSTORAGE_FALLBACK_MAX_BYTES)throw new Error('予備保存上限超過');localStorage.setItem(STORAGE_KEY,json);return true}catch(e){return false}}}
@@ -1125,6 +1140,20 @@ function fillStaticOptions(){q('taskStatus').innerHTML=TASK_STATUSES.map(x=>`<op
 function activeUsers(){return state.users.filter(u=>u.active!==false).sort((a,b)=>a.name.localeCompare(b.name,'ja'))}
 function userOptions(blank='未割当'){return `<option value="">${esc(blank)}</option>`+activeUsers().map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('')}
 function userOptionsSelected(current='',blank='未割当'){const users=state.users.filter(u=>u.active!==false||u.id===current).sort((a,b)=>a.name.localeCompare(b.name,'ja'));return `<option value=""${current?'':' selected'}>${esc(blank)}</option>`+users.map(u=>`<option value="${esc(u.id)}"${u.id===current?' selected':''}>${esc(u.name)}${u.active===false?'（無効）':''}</option>`).join('')}
+function applyTheme(theme){
+  const next=theme==='dark'?'dark':'light';
+  document.documentElement.dataset.theme=next;
+  q('themeToggleBtn').textContent=next==='dark'?'☀ ライト':'☾ ダーク';
+  q('themeToggleBtn').setAttribute('aria-label',next==='dark'?'ライト版の配色に切り替える':'ダーク版の配色に切り替える');
+}
+function switchTheme(){const next=document.documentElement.dataset.theme==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,next);applyTheme(next)}
+function syncOutlook(){
+  if(!currentUserId)return alert('先に上部の「自分」で利用者を選択してください。');
+  if(!/^[A-Za-z0-9_-]{1,100}$/.test(currentUserId))return alert('利用者IDが連係用の形式ではありません。');
+  if(!sharedFileHandle)return alert('先に「共同利用」で共有JSONに接続してください。');
+  if(sharedConflict||sharedSnapshot()!==lastSharedSnapshot)return alert('共有側に反映されていない変更があります。保存・競合を解消してから連係してください。');
+  window.location.href='workportal-outlook://sync/'+encodeURIComponent(currentUserId);
+}
 function refreshCurrentUserControls(){
   const options='<option value="">未設定</option>'+activeUsers().map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('');
   for(const id of ['currentUserSelect','sharedCurrentUserSelect']){const el=q(id);if(el){el.innerHTML=options;el.value=currentUserId||''}}
@@ -1807,6 +1836,7 @@ const nrw=e.target.closest('[data-new-record-work]');if(nrw)openRecordForWork(nr
   q('currentUserSelect').addEventListener('change',()=>setCurrentUser(q('currentUserSelect').value));q('sharedCurrentUserSelect').addEventListener('change',()=>setCurrentUser(q('sharedCurrentUserSelect').value));
   q('connectSharedBtn').onclick=connectSharedFile;q('createSharedBtn').onclick=createSharedFile;q('reloadSharedBtn').onclick=reloadShared;q('disconnectSharedBtn').onclick=disconnectShared;q('addUserBtn').onclick=addUser;q('newUserName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addUser()}});
   q('journalShareActivity').addEventListener('change',()=>q('journalSharedCommentField').classList.toggle('hidden',!q('journalShareActivity').checked));
+  q('themeToggleBtn').onclick=switchTheme;q('outlookSyncBtn').onclick=syncOutlook;
   q('notificationBtn').onclick=openNotificationCenter;q('markAllNotificationsBtn').onclick=markAllNotificationsRead;q('quickJournalBtn').onclick=()=>openJournal();q('newJournalBtn').onclick=()=>openJournal();q('newTaskBtn').onclick=()=>openTask();q('calendarTaskBtn').onclick=()=>openTask();q('newCaseBtn').onclick=()=>openCase();q('newRecordBtn').onclick=()=>openRecord();q('newManualBtn').onclick=()=>openManual();q('newWorkBtn').onclick=()=>openWork();q('newLinkBtn').onclick=()=>openLink();q('newRepeatBtn').onclick=()=>openRepeat();q('manageWorkCategoriesBtn').onclick=openWorkCategoryManager;q('addWorkCategoryBtn').onclick=addWorkCategory;q('workCategoryFilter').addEventListener('change',renderWorks);q('ganttCategoryFilter').addEventListener('change',renderGantt);
   q('newWorkCategoryName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addWorkCategory()}});q('journalForm').addEventListener('submit',saveJournalForm);q('journalDeleteBtn').onclick=deleteJournal;q('journalTaskId').addEventListener('change',()=>{journalStatusTouched=true;syncJournalTaskContext()});q('journalStatusAfter').addEventListener('change',()=>{journalStatusTouched=true});q('journalMonth').addEventListener('change',renderJournals);q('journalWorkFilter').addEventListener('change',renderJournals);q('journalTaskOnly').addEventListener('change',renderJournals);q('taskForm').addEventListener('submit',saveTaskForm);q('workForm').addEventListener('submit',saveWorkForm);q('caseForm').addEventListener('submit',saveCaseForm);q('recordForm').addEventListener('submit',saveRecordForm);q('manualForm').addEventListener('submit',saveManualForm);q('linkForm').addEventListener('submit',saveLinkForm);q('repeatForm').addEventListener('submit',saveRepeatForm);
   q('taskDeleteBtn').onclick=deleteTask;q('workDeleteBtn').onclick=deleteWork;q('caseDeleteBtn').onclick=deleteCase;q('recordDeleteBtn').onclick=deleteRecord;q('manualDeleteBtn').onclick=deleteManual;q('linkDeleteBtn').onclick=deleteLink;q('repeatDeleteBtn').onclick=deleteRepeat;q('addChecklistBtn').onclick=addChecklistRow;q('repeatType').onchange=renderRepeatTypeFields;
@@ -1836,7 +1866,7 @@ function initSidebarTooltips(){
   window.addEventListener('resize',hideSidebarTooltip);window.addEventListener('scroll',hideSidebarTooltip,true)
 }
 
-async function boot(){initSidebarTooltips();fillStaticOptions();bindEvents();q('journalMonth').value=today().slice(0,7);setSaveStatus('','読み込み中');state=await loadState();selectedFiscalYear=fiscalYearFromDate(today());state.settings.selectedFiscalYear=selectedFiscalYear;q('searchAllYears').checked=state.settings.searchAllYears;if(localStorage.getItem(SIDEBAR_KEY)==='1'){q('app').classList.add('sidebar-collapsed');q('sidebarToggle').textContent='▶'}currentUserId=localStorage.getItem(CURRENT_USER_KEY)||currentUserId;homeScope=localStorage.getItem(HOME_SCOPE_KEY)||'mine';refreshCurrentUserControls();lastSharedSnapshot=sharedSnapshot();try{const h=await idbGetKey(SHARED_HANDLE_KEY);if(h&&await ensureSharedPermission(h,false)){sharedFileHandle=h;await loadSharedFile(h,{requestPermission:false})}else setSharedStatus('','ローカルのみ（共有JSON未接続）')}catch(e){setSharedStatus('','ローカルのみ（共有JSON未接続）')}ensureDueNotifications();resetCalendarForYear();renderAll();initNavigationHistory();const ok=await saveLocalCache();if(storageMigrationSource&&ok)toast(`${storageMigrationSource}から新しい保存領域へ移行しました`);else if(!ok)setSaveStatus('error','保存失敗')}
+async function boot(){applyTheme(localStorage.getItem(THEME_KEY)||document.documentElement.dataset.theme);initSidebarTooltips();fillStaticOptions();bindEvents();q('journalMonth').value=today().slice(0,7);setSaveStatus('','読み込み中');state=await loadState();selectedFiscalYear=fiscalYearFromDate(today());state.settings.selectedFiscalYear=selectedFiscalYear;q('searchAllYears').checked=state.settings.searchAllYears;if(localStorage.getItem(SIDEBAR_KEY)==='1'){q('app').classList.add('sidebar-collapsed');q('sidebarToggle').textContent='▶'}currentUserId=localStorage.getItem(CURRENT_USER_KEY)||currentUserId;homeScope=localStorage.getItem(HOME_SCOPE_KEY)||'mine';refreshCurrentUserControls();lastSharedSnapshot=sharedSnapshot();try{const h=await idbGetKey(SHARED_HANDLE_KEY);if(h&&await ensureSharedPermission(h,false)){sharedFileHandle=h;await loadSharedFile(h,{requestPermission:false})}else setSharedStatus('','ローカルのみ（共有JSON未接続）')}catch(e){setSharedStatus('','ローカルのみ（共有JSON未接続）')}ensureDueNotifications();resetCalendarForYear();renderAll();initNavigationHistory();const ok=await saveLocalCache();if(storageMigrationSource&&ok)toast(`${storageMigrationSource}から新しい保存領域へ移行しました`);else if(!ok)setSaveStatus('error','保存失敗')}
 if(typeof window!=='undefined')window.addEventListener('DOMContentLoaded',boot);
 </script>
 </body>
