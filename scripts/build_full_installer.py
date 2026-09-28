@@ -23,7 +23,7 @@ HEADER = r'''Option Explicit
 ' Standalone installer for the latest HTML portal. Generated: do not edit by hand.
 ' The shared JSON and browser-local journal are never copied or overwritten.
 Dim fso, shell, stage, installDir, backupDir, installed, backed, answer
-Dim data, fileList, rel, outlookInstaller, rc
+Dim data, fileList, rel, outlookInstaller, rc, edgePath, launcherNote
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 installDir = fso.GetParentFolderName(WScript.ScriptFullName)
@@ -87,6 +87,46 @@ Sub InstallFile(relativePath)
   Check "配置の記録：" & relativePath
 End Sub
 
+Sub CreatePortalShortcut()
+  Dim name, target, oldPath, link, htmlPath, iconPath
+  On Error Resume Next
+  name = "業務ポータル.lnk"
+  target = fso.BuildPath(installDir, name)
+  htmlPath = fso.BuildPath(installDir, "index.html")
+  iconPath = fso.BuildPath(installDir, "icon.ico")
+  If fso.FileExists(target) Then
+    oldPath = fso.BuildPath(backupDir, name)
+    EnsureFolder fso.GetParentFolderName(oldPath)
+    fso.MoveFile target, oldPath
+    Check "以前のショートカットの退避"
+    backed.Add name, True
+    Check "ショートカットの退避記録"
+  End If
+  installed.Add name, True
+  Check "ショートカットの配置記録"
+  edgePath = shell.ExpandEnvironmentStrings("%ProgramFiles(x86)%") & "\Microsoft\Edge\Application\msedge.exe"
+  If Not fso.FileExists(edgePath) Then edgePath = shell.ExpandEnvironmentStrings("%ProgramFiles%") & "\Microsoft\Edge\Application\msedge.exe"
+  If Not fso.FileExists(edgePath) Then edgePath = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\Microsoft\Edge\Application\msedge.exe"
+  Set link = shell.CreateShortcut(target)
+  Check "ショートカットの作成"
+  If fso.FileExists(edgePath) Then
+    link.TargetPath = edgePath
+    link.Arguments = Chr(34) & htmlPath & Chr(34)
+    launcherNote = "ショートカットはMicrosoft Edgeで開きます。"
+  Else
+    link.TargetPath = htmlPath
+    link.Arguments = ""
+    launcherNote = "Edgeを検出できなかったため、ショートカットは既定のブラウザーで開きます。共同利用ではEdgeを使ってください。"
+  End If
+  link.WorkingDirectory = installDir
+  link.Description = "業務ポータル（ライト／ダーク切替対応）"
+  link.IconLocation = iconPath & ",0"
+  Check "ショートカットの設定"
+  link.Save
+  Check "ショートカットの保存"
+  If Not fso.FileExists(target) Then AbortInstall "ショートカットを保存できませんでした。"
+End Sub
+
 Sub EnsureFolder(folder)
   On Error Resume Next
   If fso.FolderExists(folder) Then Exit Sub
@@ -128,12 +168,14 @@ FOOTER = r'''
 For Each rel In Split(fileList, vbLf)
   If rel <> "" Then InstallFile rel
 Next
+CreatePortalShortcut
 fso.DeleteFolder stage, True
 Check "一時ファイルの片付け"
 stage = ""
 
 answer = MsgBox("アプリを次の場所に導入しました：" & vbCrLf & installDir & vbCrLf & _
-  "同じフォルダーの index.html をMicrosoft Edgeで開いてください。" & vbCrLf & _
+  "アイコン付きの「業務ポータル」ショートカットも同じフォルダーに作成しました。" & vbCrLf & _
+  launcherNote & vbCrLf & _
   "共同利用では、画面から既存の共有JSONを選択してください。本番用にサンプルを選ばないでください。" & vbCrLf & _
   "従来版Outlookとの連携を今すぐ設定しますか？", vbYesNo + vbQuestion, "業務ポータルの導入")
 If answer = vbYes Then

@@ -55,13 +55,24 @@ class FullInstallerTest(unittest.TestCase):
         self.assertIn("index.html", found)
         self.assertEqual(sum(name.endswith("index.html") for name in found), 1)
         self.assertIn("installDir = fso.GetParentFolderName(WScript.ScriptFullName)", source)
-        self.assertNotIn("%LOCALAPPDATA%", source)
+        self.assertNotIn('installDir = fso.BuildPath(localBase, "WorkPortal")', source)
         self.assertIn('Then InstallFile rel', source)
 
     def test_checksum(self) -> None:
         expected = hashlib.sha256(INSTALLER.read_bytes()).hexdigest().upper()
         text = (ROOT / "checksums" / "SHA256SUMS.txt").read_text()
         self.assertIn(f"{expected}  {INSTALLER.name}", text.splitlines())
+
+    def test_shortcut_is_adjacent_and_uses_bundled_icon(self) -> None:
+        source = INSTALLER.read_text(encoding="utf-16")
+        self.assertIn('name = "業務ポータル.lnk"', source)
+        self.assertIn('target = fso.BuildPath(installDir, name)', source)
+        self.assertIn('iconPath = fso.BuildPath(installDir, "icon.ico")', source)
+        self.assertIn('link.IconLocation = iconPath & ",0"', source)
+        self.assertIn('link.TargetPath = edgePath', source)
+        self.assertIn('link.TargetPath = htmlPath', source)
+        self.assertIn('If rel <> "" Then InstallFile rel\nNext\nCreatePortalShortcut', source.replace("\r\n", "\n"))
+        self.assertNotIn('shell.SpecialFolders("Desktop")', source)
 
     def test_full_zip_contains_one_root_html(self) -> None:
         with ZipFile(ROOT / "release/業務ポータル_latest_HTML_導入一式.zip") as archive:
