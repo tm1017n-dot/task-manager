@@ -533,6 +533,10 @@ html[data-theme=dark] .sidebar{border-color:#38445d}html[data-theme=dark] .btn.p
 .kpi:nth-child(n+2)::after{background:var(--muted)}
 .kpi[data-home-task-filter=overdue]::after{background:var(--danger)}
 .kpi[data-home-task-filter=waiting]::after{background:#bc8429}
+html[data-theme="dark"] #homeScopeSwitch{background:#121a29;border:1px solid #7187ad}
+html[data-theme="dark"] #homeScopeSwitch button{color:#dce5f6}
+html[data-theme="dark"] #homeScopeSwitch button.active{background:#a6b9ff;color:#101a36;box-shadow:0 2px 10px #0008;font-weight:800}
+html[data-theme="dark"] #homeScopeSwitch button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media(min-width:1181px){.topbar .shared-status{margin-left:auto}.topbar .top-actions{margin-left:0}}
 @media(max-width:1180px){.content{padding:28px 22px}.topbar{padding:8px 22px}.top-fixed .breadcrumb-bar,.top-alerts{padding-inline:22px}.home-daily-grid{grid-template-columns:1fr}.compact-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.page-head{align-items:flex-start}.page-head h1{font-size:28px}.usage-guide{grid-template-columns:repeat(4,minmax(0,1fr))}.home-focus-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.content{padding:24px 15px 40px}.topbar{padding:6px 12px}.top-fixed .breadcrumb-bar,.top-alerts{padding-inline:12px}.page-head{gap:14px;margin-bottom:22px}.page-head h1{font-size:25px}.page-actions{gap:7px}.kpi,.kpi:first-child{padding:17px 15px}.kpi-value{font-size:34px}.kpi::after{right:15px;top:21px}.compact-kpis{gap:10px}.panel{padding:17px}.home-stack{gap:16px}.sidebar{width:232px}.topbar .shared-status{max-width:165px}.panel-head h2{font-size:14px}}
@@ -599,7 +603,7 @@ html[data-theme=dark] .sidebar{border-color:#38445d}html[data-theme=dark] .btn.p
       <section class="page active" id="page-home">
         <div class="page-head">
           <div><h1>ホーム</h1><p id="homeSubtitle">今日の仕事と直近の実績をまとめて確認します。</p></div>
-          <div class="page-actions"><div class="scope-switch" id="homeScopeSwitch"><button type="button" data-home-scope="mine" class="active">自分</button><button type="button" data-home-scope="all">全体</button></div><button class="btn" data-new-journal>＋ 業務日誌</button><button class="btn primary" data-new-task>＋ タスク</button></div>
+          <div class="page-actions"><div class="scope-switch" id="homeScopeSwitch"><button type="button" data-home-scope="mine" class="active" aria-pressed="true">自分</button><button type="button" data-home-scope="all" aria-pressed="false">全体</button></div><button class="btn" data-new-journal>＋ 業務日誌</button><button class="btn primary" data-new-task>＋ タスク</button></div>
         </div>
         <div class="home-focus-grid" id="homeKpis"></div>
         <div class="home-daily-grid">
@@ -1331,7 +1335,7 @@ function renderBackupHistory(){const el=q('backupHistory');if(!el)return;const h
 ========================= */
 function renderHome(){
   const mine=homeScope!=='all',uid0=currentUserId;
-  q('homeScopeSwitch').querySelectorAll('[data-home-scope]').forEach(b=>b.classList.toggle('active',b.dataset.homeScope===homeScope));
+  q('homeScopeSwitch').querySelectorAll('[data-home-scope]').forEach(b=>{const selected=b.dataset.homeScope===homeScope;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
   const baseTasks=state.tasks.filter(t=>taskVisibleInYear(t)&&t.status!=='完了');
   const tasks=mine?(uid0?baseTasks.filter(t=>t.assigneeId===uid0):[]):baseTasks;
   const overdue=tasks.filter(t=>t.dueDate&&t.dueDate<today()).sort((a,b)=>compareDate(a.dueDate,b.dueDate));

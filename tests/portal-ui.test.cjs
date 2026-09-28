@@ -3,22 +3,31 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const light = fs.readFileSync('source/light/index.html', 'utf8');
-const dark = fs.readFileSync('source/dark/index.html', 'utf8');
+const app = fs.readFileSync('source/app/index.html', 'utf8');
 
-test('both standalone themes carry identical styles, behavior, and controls', () => {
-  assert.equal(light.replace('data-theme="light"','data-theme="dark"'),dark);
-  for (const source of [light,dark]) {
-    assert.match(source, /id="themeToggleBtn"/);
-    assert.match(source, /id="outlookSyncBtn"/);
-    assert.match(source, /html\[data-theme="dark"\]/);
-    assert.match(source, /html\[data-theme="light"\]/);
-  }
+test('one HTML carries both palettes and a visible dark scope selection', () => {
+  assert.match(app, /id="themeToggleBtn"/);
+  assert.match(app, /id="outlookSyncBtn"/);
+  assert.match(app, /html\[data-theme="dark"\]/);
+  assert.match(app, /html\[data-theme="light"\]/);
+  assert.match(app, /html\[data-theme="dark"\] #homeScopeSwitch button\.active\{background:#a6b9ff;color:#101a36/);
+  assert.match(app, /b\.setAttribute\('aria-pressed',String\(selected\)\)/);
+  const luminance = hex => {
+    const rgb = hex.match(/../g).map(x => parseInt(x, 16) / 255)
+      .map(x => x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4);
+    return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
+  };
+  const contrast = (a, b) => {
+    const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (high + 0.05) / (low + 0.05);
+  };
+  assert.ok(contrast('101a36', 'a6b9ff') > 7);
+  assert.ok(contrast('dce5f6', '121a29') > 7);
 });
 
 test('theme switch persists and Outlook button hands off only an ID', () => {
-  const begin = light.indexOf('function applyTheme(theme)');
-  const end = light.indexOf('function refreshCurrentUserControls(){',begin);
+  const begin = app.indexOf('function applyTheme(theme)');
+  const end = app.indexOf('function refreshCurrentUserControls(){',begin);
   const button = { textContent:'', setAttribute(name,value) {this[name]=value;} };
   const store = new Map();
   const context = {
@@ -31,7 +40,7 @@ test('theme switch persists and Outlook button hands off only an ID', () => {
     window:{location:{href:''}}, alert:()=>{throw new Error('unexpected alert')}
   };
   vm.createContext(context);
-  vm.runInContext(light.slice(begin,end),context);
+  vm.runInContext(app.slice(begin,end),context);
   context.switchTheme();
   assert.equal(context.document.documentElement.dataset.theme,'dark');
   assert.equal(store.get('personal_work_portal_theme'),'dark');
