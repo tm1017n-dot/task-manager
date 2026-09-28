@@ -27,21 +27,21 @@ Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 localBase = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%")
 If localBase = "%LOCALAPPDATA%" Or Not fso.FolderExists(localBase) Then
-  MsgBox "LOCALAPPDATA is unavailable.", vbCritical, "Work Portal setup"
+  MsgBox "端末内の保存先（LOCALAPPDATA）を取得できません。", vbCritical, "業務ポータルの導入"
   WScript.Quit 1
 End If
 installDir = fso.BuildPath(localBase, "WorkPortal")
-If MsgBox("Install the latest Work Portal for this Windows user?" & vbCrLf & _
-  "Location: " & installDir & vbCrLf & _
-  "Existing shared JSON will not be modified." & vbCrLf & _
-  "The classic Outlook helper can be configured after installation.", _
-  vbYesNo + vbQuestion, "Work Portal setup") <> vbYes Then WScript.Quit 0
+If MsgBox("このWindows利用者に、最新版の業務ポータルを導入しますか？" & vbCrLf & _
+  "導入先：" & installDir & vbCrLf & _
+  "既存の共有JSONは変更しません。" & vbCrLf & _
+  "導入後、必要に応じて従来版Outlookとの連携を設定できます。", _
+  vbYesNo + vbQuestion, "業務ポータルの導入") <> vbYes Then WScript.Quit 0
 On Error Resume Next
 stage = fso.BuildPath(localBase, "WorkPortal_stage_" & fso.GetTempName())
 backupDir = fso.BuildPath(localBase, "WorkPortal_backup_" & fso.GetTempName())
 oldMoved = False
 fso.CreateFolder stage
-Check "Create staging folder"
+Check "一時フォルダーの作成"
 
 Sub Check(label)
   Dim detail
@@ -55,8 +55,8 @@ Sub AbortInstall(detail)
   On Error Resume Next
   If stage <> "" Then If fso.FolderExists(stage) Then fso.DeleteFolder stage, True
   If oldMoved And Not fso.FolderExists(installDir) Then fso.MoveFolder backupDir, installDir
-  MsgBox "Installation stopped: " & detail & vbCrLf & _
-    "If a previous copy was moved, its backup is at " & backupDir, vbCritical, "Work Portal setup"
+  MsgBox "導入を中断しました：" & detail & vbCrLf & _
+    "以前のアプリを退避した場合、その保存先：" & backupDir, vbCritical, "業務ポータルの導入"
   WScript.Quit 1
 End Sub
 
@@ -65,7 +65,7 @@ Sub EnsureFolder(folder)
   If fso.FolderExists(folder) Then Exit Sub
   EnsureFolder fso.GetParentFolderName(folder)
   fso.CreateFolder folder
-  Check "Create " & folder
+  Check "フォルダーの作成：" & folder
 End Sub
 
 Sub SaveEmbedded(relativePath, expectedSize, encoded)
@@ -74,22 +74,22 @@ Sub SaveEmbedded(relativePath, expectedSize, encoded)
   filePath = fso.BuildPath(stage, relativePath)
   EnsureFolder fso.GetParentFolderName(filePath)
   Set xml = CreateObject("MSXML2.DOMDocument.6.0")
-  Check "Load decoder"
+  Check "復元機能の準備"
   Set node = xml.createElement("binary")
   node.dataType = "bin.base64"
   node.Text = encoded
-  Check "Decode " & relativePath
+  Check "ファイルの復元：" & relativePath
   Set stream = CreateObject("ADODB.Stream")
   stream.Type = 1
   stream.Open
   stream.Write node.nodeTypedValue
-  Check "Write " & relativePath
+  Check "ファイルの書き込み：" & relativePath
   stream.SaveToFile filePath, 2
-  Check "Save " & relativePath
+  Check "ファイルの保存：" & relativePath
   stream.Close
-  Check "Close " & relativePath
-  If fso.GetFile(filePath).Size <> expectedSize Then AbortInstall "Incorrect size: " & relativePath
-  Check "Verify " & relativePath
+  Check "ファイルの終了処理：" & relativePath
+  If fso.GetFile(filePath).Size <> expectedSize Then AbortInstall "復元したファイルのサイズが正しくありません：" & relativePath
+  Check "ファイルの確認：" & relativePath
 End Sub
 
 ' Embedded files follow.
@@ -100,47 +100,47 @@ FOOTER = r'''
 ' All files have been decoded and checked before replacing an existing install.
 If fso.FolderExists(installDir) Then
   fso.MoveFolder installDir, backupDir
-  Check "Back up previous install"
+  Check "以前のアプリの退避"
   oldMoved = True
 End If
 fso.MoveFolder stage, installDir
-Check "Activate new install"
+Check "新しいアプリへの切替"
 stage = ""
 
 edgePath = shell.ExpandEnvironmentStrings("%ProgramFiles(x86)%") & "\Microsoft\Edge\Application\msedge.exe"
 If Not fso.FileExists(edgePath) Then edgePath = shell.ExpandEnvironmentStrings("%ProgramFiles%") & "\Microsoft\Edge\Application\msedge.exe"
 If fso.FileExists(edgePath) Then
-  Set shortcut = shell.CreateShortcut(fso.BuildPath(shell.SpecialFolders("Desktop"), "Work Portal.lnk"))
+  Set shortcut = shell.CreateShortcut(fso.BuildPath(shell.SpecialFolders("Desktop"), "業務ポータル.lnk"))
   shortcut.TargetPath = edgePath
   shortcut.Arguments = Chr(34) & fso.BuildPath(installDir, "source\light\index.html") & Chr(34)
   shortcut.WorkingDirectory = fso.BuildPath(installDir, "source\light")
-  shortcut.Description = "Work Portal (light and dark switching available)"
+  shortcut.Description = "業務ポータル（ライト／ダーク切替対応）"
   shortcut.IconLocation = fso.BuildPath(installDir, "source\light\icon.ico") & ",0"
   shortcut.Save
   Err.Clear ' A locked down Desktop must not invalidate the installed application.
 End If
 
-answer = MsgBox("Installed at " & installDir & vbCrLf & _
-  "Launch source\light\index.html with Microsoft Edge." & vbCrLf & _
-  "Choose the existing shared JSON in the portal. Do not use a sample for production." & vbCrLf & _
-  "Would you like to configure classic Outlook now?", vbYesNo + vbQuestion, "Work Portal setup")
+answer = MsgBox("アプリを次の場所に導入しました：" & vbCrLf & installDir & vbCrLf & _
+  "Microsoft Edgeで source\light\index.html を開いてください。" & vbCrLf & _
+  "共同利用では、画面から既存の共有JSONを選択してください。本番用にサンプルを選ばないでください。" & vbCrLf & _
+  "従来版Outlookとの連携を今すぐ設定しますか？", vbYesNo + vbQuestion, "業務ポータルの導入")
 If answer = vbYes Then
   outlookInstaller = fso.BuildPath(installDir, "outlook\Install_Outlook_Sync.vbs")
   rc = shell.Run(Chr(34) & shell.ExpandEnvironmentStrings("%SystemRoot%") & _
     "\System32\wscript.exe" & Chr(34) & " " & Chr(34) & outlookInstaller & Chr(34), 1, True)
   If Err.Number <> 0 Then
-    MsgBox "Portal installed. Outlook setup could not start: " & Err.Description, vbExclamation, "Work Portal setup"
+    MsgBox "アプリは導入済みです。Outlookの設定を開始できませんでした：" & Err.Description, vbExclamation, "業務ポータルの導入"
     Err.Clear
   ElseIf rc <> 0 Then
-    MsgBox "Portal installed. Outlook setup ended with code " & rc & _
-      ". You can run outlook\Install_Outlook_Sync.vbs later.", vbExclamation, "Work Portal setup"
+    MsgBox "アプリは導入済みです。Outlookの設定はエラーコード " & rc & _
+      " で終了しました。後から outlook\Install_Outlook_Sync.vbs を実行できます。", vbExclamation, "業務ポータルの導入"
   End If
 End If
 If oldMoved Then
-  MsgBox "Installation complete. Previous application files are preserved at:" & vbCrLf & _
-    backupDir & vbCrLf & "Your shared JSON was not changed.", vbInformation, "Work Portal setup"
+  MsgBox "導入が完了しました。以前のアプリは次の場所に退避しました：" & vbCrLf & _
+    backupDir & vbCrLf & "共有JSONは変更していません。", vbInformation, "業務ポータルの導入"
 Else
-  MsgBox "Installation complete. Your shared JSON was not changed.", vbInformation, "Work Portal setup"
+  MsgBox "導入が完了しました。共有JSONは変更していません。", vbInformation, "業務ポータルの導入"
 End If
 '''
 
