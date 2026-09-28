@@ -66,6 +66,24 @@ test('bundled shared sample parses without executing script code', () => {
   assert.ok(Array.isArray(data.users));
 });
 
+test('sync errors and removal confirmation are shown in Japanese', () => {
+  const h = helper(), c = calendar(), dialogs = [];
+  const shell = { Popup(message, timeout, title) {
+    dialogs.push({message, title});
+    return 7;
+  }};
+  assert.throws(() => h.parseJSON('{'), /共有JSON/);
+  assert.throws(() => h.desiredTasks({}, 'u-1'), /共有JSON/);
+  const old = c.Items.Add();
+  old.UserProperties.Add('WorkPortalTaskId').Value = 't-1';
+  old.UserProperties.Add('WorkPortalUserId').Value = 'u-1';
+  old.Subject = '古い予定';
+  old.Save();
+  h.syncCalendar(c, {}, 'u-1', shell);
+  assert.match(dialogs[0].message, /対象から外れた連携済み予定/);
+  assert.match(dialogs[0].title, /業務ポータル/);
+});
+
 test('calendar sync is repeatable, updates dates, and asks before cleanup', () => {
   const h = helper(), c = calendar();
   const shell = { answer:7, Popup() { return this.answer; } };

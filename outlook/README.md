@@ -2,6 +2,8 @@
 
 このフォルダーの `Install_Outlook_Sync.vbs`、`Sync_Outlook.js`、`Uninstall_Outlook_Sync.vbs` を一緒に配布します。Windows 10/11、従来版Outlook（「ファイル」タブあり）、Edge、Windows Script Host が必要です。管理者権限、サーバー、PowerShell、Graph APIは不要です。
 
+設定・削除・同期結果・エラーのダイアログは日本語で表示します。
+
 ## 各PCで一度だけ設定
 
 1. 配布した3ファイルを同じフォルダーに置き、`Install_Outlook_Sync.vbs` を実行します。

@@ -11,7 +11,7 @@ var FORMAT = 'personal-work-portal-shared';
 // Never eval data from a shared file.
 function parseJSON(text) {
   var pos = 0;
-  function fail() { throw new Error('Invalid shared JSON at character ' + pos); }
+  function fail() { throw new Error('\u5171\u6709JSON\u306e\u5f62\u5f0f\u304c\u6b63\u3057\u304f\u3042\u308a\u307e\u305b\u3093\uff08\u6587\u5b57\u4f4d\u7f6e ' + pos + '\uff09\u3002'); }
   function space() { while (pos < text.length && /[\x20\t\r\n]/.test(text.charAt(pos))) pos++; }
   function string() {
     var out = '', c, hex, n;
@@ -75,9 +75,11 @@ function parseJSON(text) {
 }
 
 function targetUser(argument) {
-  if (argument.substr(0, PROTOCOL.length).toLowerCase() !== PROTOCOL) throw new Error('Invalid launch link.');
-  var id = decodeURIComponent(argument.substr(PROTOCOL.length).replace(/\/$/, ''));
-  if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error('Invalid user ID.');
+  if (argument.substr(0, PROTOCOL.length).toLowerCase() !== PROTOCOL) throw new Error('\u8d77\u52d5\u30ea\u30f3\u30af\u304c\u6b63\u3057\u304f\u3042\u308a\u307e\u305b\u3093\u3002');
+  var id;
+  try { id = decodeURIComponent(argument.substr(PROTOCOL.length).replace(/\/$/, '')); }
+  catch (e) { throw new Error('\u8d77\u52d5\u30ea\u30f3\u30af\u306e\u5229\u7528\u8005ID\u3092\u8aad\u307f\u53d6\u308c\u307e\u305b\u3093\u3002'); }
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error('\u5229\u7528\u8005ID\u304c\u6b63\u3057\u304f\u3042\u308a\u307e\u305b\u3093\u3002');
   return id;
 }
 function isoDate(value) {
@@ -93,18 +95,18 @@ function safeId(value) {
 }
 function desiredTasks(data, userId) {
   if (!data || data.format !== FORMAT || data.schemaVersion !== 6 ||
-      !(data.tasks instanceof Array) || !(data.users instanceof Array)) throw new Error('Unsupported shared JSON format or schema.');
+      !(data.tasks instanceof Array) || !(data.users instanceof Array)) throw new Error('\u5171\u6709JSON\u306e\u5f62\u5f0f\u307e\u305f\u306f\u7248\u304c\u5bfe\u5fdc\u3057\u3066\u3044\u307e\u305b\u3093\u3002');
   var found = false, i, t, dates = {}, result = {};
   for (i = 0; i < data.users.length; i++) if (data.users[i] && data.users[i].id === userId && data.users[i].active !== false) found = true;
-  if (!found) throw new Error('Selected user is not active in the shared JSON.');
+  if (!found) throw new Error('\u9078\u629e\u3057\u305f\u5229\u7528\u8005\u304c\u5171\u6709JSON\u306b\u767b\u9332\u3055\u308c\u3066\u3044\u306a\u3044\u304b\u3001\u7121\u52b9\u306b\u306a\u3063\u3066\u3044\u307e\u3059\u3002');
   for (i = 0; i < data.tasks.length; i++) {
     t = data.tasks[i];
     if (!t || t.assigneeId !== userId || t.status === '\u5b8c\u4e86' || !t.dueDate) continue;
     if (!safeId(t.id) ||
-        typeof t.title !== 'string' || !t.title) throw new Error('Invalid task ID or title.');
-    if (Object.prototype.hasOwnProperty.call(result, t.id)) throw new Error('Duplicate task ID in shared JSON.');
+        typeof t.title !== 'string' || !t.title) throw new Error('\u30bf\u30b9\u30afID\u307e\u305f\u306f\u4ef6\u540d\u304c\u6b63\u3057\u304f\u3042\u308a\u307e\u305b\u3093\u3002');
+    if (Object.prototype.hasOwnProperty.call(result, t.id)) throw new Error('\u5171\u6709JSON\u5185\u3067\u30bf\u30b9\u30afID\u304c\u91cd\u8907\u3057\u3066\u3044\u307e\u3059\u3002');
     dates[t.id] = isoDate(t.dueDate);
-    if (!dates[t.id]) throw new Error('Invalid due date for task ' + t.id);
+    if (!dates[t.id]) throw new Error('\u30bf\u30b9\u30af\u306e\u671f\u9650\u304c\u6b63\u3057\u304f\u3042\u308a\u307e\u305b\u3093\uff1a' + t.id);
     result[t.id] = {title:t.title, date:dates[t.id]};
   }
   return result;
@@ -156,30 +158,34 @@ function syncCalendar(calendar, tasks, userId, shell) {
   var removed = 0, preview = [], i, decision;
   if (stale.length && !failed && !current.duplicates) {
     for (i = 0; i < stale.length && i < 8; i++) preview.push(String(stale[i].Subject));
-    decision = shell.Popup('No longer assigned/open (' + stale.length + '):\n' + preview.join('\n') +
-      '\n\nRemove these linked appointments from the Work Portal calendar?', 0, 'Work Portal Outlook sync', 4 + 32);
+    decision = shell.Popup('\u5bfe\u8c61\u304b\u3089\u5916\u308c\u305f\u9023\u643a\u6e08\u307f\u4e88\u5b9a\uff08' + stale.length + '\u4ef6\uff09\uff1a\n' + preview.join('\n') +
+      '\n\n\u696d\u52d9\u30dd\u30fc\u30bf\u30eb\u306e\u4e88\u5b9a\u8868\u304b\u3089\u3001\u3053\u308c\u3089\u306e\u4e88\u5b9a\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f', 0, '\u696d\u52d9\u30dd\u30fc\u30bf\u30eb\uff1aOutlook\u9023\u643a', 4 + 32);
     if (decision === 6) for (i = 0; i < stale.length; i++) {
-      try { stale[i].Delete(); removed++; } catch (e2) { failed++; details.push('cleanup: ' + e2.message); }
+      try { stale[i].Delete(); removed++; } catch (e2) { failed++; details.push('\u4e88\u5b9a\u306e\u524a\u9664\uff1a' + e2.message); }
     }
   }
   return {added:added, updated:updated, removed:removed, pending:stale.length-removed,
     duplicates:current.duplicates, failed:failed, details:details};
 }
 function main() {
-  if (WScript.Arguments.length !== 1) throw new Error('Launch this helper from the portal button.');
+  if (WScript.Arguments.length !== 1) throw new Error('\u30dd\u30fc\u30bf\u30eb\u306e\u300cOutlook\u3078\u53cd\u6620\u300d\u30dc\u30bf\u30f3\u304b\u3089\u8d77\u52d5\u3057\u3066\u304f\u3060\u3055\u3044\u3002');
   var userId = targetUser(String(WScript.Arguments.Item(0)));
   var shell = new ActiveXObject('WScript.Shell');
-  var path = shell.RegRead(REGISTRY);
-  if (!new ActiveXObject('Scripting.FileSystemObject').FileExists(path)) throw new Error('Shared JSON is missing. Run the installer again.');
+  var path;
+  try { path = shell.RegRead(REGISTRY); }
+  catch (e) { throw new Error('Outlook\u9023\u643a\u306e\u8a2d\u5b9a\u304c\u3042\u308a\u307e\u305b\u3093\u3002\u30a4\u30f3\u30b9\u30c8\u30fc\u30e9\u30fc\u3092\u5b9f\u884c\u3057\u3066\u304f\u3060\u3055\u3044\u3002'); }
+  if (!new ActiveXObject('Scripting.FileSystemObject').FileExists(path)) throw new Error('\u5171\u6709JSON\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002\u9023\u643a\u306e\u8a2d\u5b9a\u3092\u3084\u308a\u76f4\u3057\u3066\u304f\u3060\u3055\u3044\u3002');
   var tasks = desiredTasks(parseJSON(readUtf8(path)), userId);
-  var outlook = new ActiveXObject('Outlook.Application');
+  var outlook;
+  try { outlook = new ActiveXObject('Outlook.Application'); }
+  catch (e2) { throw new Error('\u5f93\u6765\u7248Outlook\u3092\u8d77\u52d5\u3067\u304d\u307e\u305b\u3093\u3002\u30a4\u30f3\u30b9\u30c8\u30fc\u30eb\u3068\u5229\u7528\u74b0\u5883\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002'); }
   var result = syncCalendar(createCalendar(outlook), tasks, userId, shell);
-  var message = 'Added: ' + result.added + '\nUpdated: ' + result.updated + '\nRemoved: ' + result.removed +
-    '\nPending review: ' + result.pending + '\nDuplicate appointments: ' + result.duplicates + '\nFailed: ' + result.failed;
+  var message = '\u8ffd\u52a0\uff1a' + result.added + '\u4ef6\n\u66f4\u65b0\uff1a' + result.updated + '\u4ef6\n\u524a\u9664\uff1a' + result.removed +
+    '\u4ef6\n\u524a\u9664\u4fdd\u7559\uff1a' + result.pending + '\u4ef6\n\u91cd\u8907\u3092\u691c\u51fa\uff1a' + result.duplicates + '\u4ef6\n\u5931\u6557\uff1a' + result.failed + '\u4ef6';
   if (result.details.length) message += '\n\n' + result.details.slice(0, 5).join('\n');
-  shell.Popup(message, 0, 'Work Portal Outlook sync', result.failed ? 16 : 64);
+  shell.Popup(message, 0, '\u696d\u52d9\u30dd\u30fc\u30bf\u30eb\uff1aOutlook\u9023\u643a', result.failed ? 16 : 64);
 }
 if (typeof WScript !== 'undefined') {
   try { main(); }
-  catch (error) { new ActiveXObject('WScript.Shell').Popup(String(error.message || error), 0, 'Work Portal Outlook sync', 16); WScript.Quit(1); }
+  catch (error) { new ActiveXObject('WScript.Shell').Popup(String(error.message || error), 0, '\u696d\u52d9\u30dd\u30fc\u30bf\u30eb\uff1aOutlook\u9023\u643a', 16); WScript.Quit(1); }
 }

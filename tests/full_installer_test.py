@@ -17,6 +17,15 @@ BLOCK = re.compile(
 
 
 class FullInstallerTest(unittest.TestCase):
+    def test_localized_vbs_dialogs(self) -> None:
+        for file in (INSTALLER, ROOT / "outlook/Install_Outlook_Sync.vbs",
+                     ROOT / "outlook/Uninstall_Outlook_Sync.vbs"):
+            raw = file.read_bytes()
+            self.assertTrue(raw.startswith(b"\xff\xfe"), str(file))
+            source = raw.decode("utf-16")
+            self.assertIn("業務ポータル", source)
+            self.assertNotIn('"Work Portal setup"', source)
+
     def test_payloads_match_sources(self) -> None:
         raw = INSTALLER.read_bytes()
         self.assertTrue(raw.startswith(b"\xff\xfe"))

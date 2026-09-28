@@ -21,3 +21,5 @@
 実行時は、各テーマの `index.html` と `icon.ico` を同じフォルダーに置き、Microsoft Edgeから開いてください。
 
 一括インストーラーは現在のWindows利用者に導入します。既存のアプリ一式は別フォルダーに退避し、共有JSONとブラウザー内の個人データには手を加えません。共有JSONへの接続は画面から行い、Outlook連係の設定時は既存の共有JSONのフルパスを入力してください。生成元は `scripts/build_full_installer.py` です。Windows/Edge/Outlookでの実機確認は導入先で行ってください。
+
+導入・Outlook連携の設定・同期結果などの確認ダイアログは日本語で表示します。
