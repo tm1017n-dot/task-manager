@@ -1,4 +1,4 @@
-"""Build the additive Outlook installer ZIP and update the latest-source manifests."""
+"""Build the Outlook and single-HTML bundles, and update the app manifest."""
 from __future__ import annotations
 
 import hashlib
@@ -22,15 +22,15 @@ def digest(path: Path) -> str:
 
 
 def main() -> None:
-    for theme in ("light", "dark"):
-        base = ROOT / "source" / theme
-        path = base / "manifest.json"
-        manifest = json.loads(path.read_text())
-        manifest["generatedAt"] = "2026-09-28"
-        for name in manifest["files"]:
-            item = base / name
-            manifest["files"][name] = {"bytes": item.stat().st_size, "sha256": digest(item)}
-        path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+    base = ROOT / "source" / "app"
+    path = base / "manifest.json"
+    manifest = json.loads(path.read_text())
+    manifest["package"] = "業務ポータル 最新HTML版（v10.1互換・配色切替）"
+    manifest["generatedAt"] = "2026-09-28"
+    for name in manifest["files"]:
+        item = base / name
+        manifest["files"][name] = {"bytes": item.stat().st_size, "sha256": digest(item)}
+    path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
 
     with ZipFile(ARCHIVE, "w", ZIP_DEFLATED, compresslevel=9) as archive:
         for name in FILES:
@@ -39,10 +39,9 @@ def main() -> None:
             archive.writestr(info, (ROOT / "outlook" / name).read_bytes())
 
     with ZipFile(FULL_ARCHIVE, "w", ZIP_DEFLATED, compresslevel=9) as archive:
-        for theme in ("light", "dark"):
-            for path in sorted((ROOT / "source" / theme).rglob("*")):
-                if path.is_file():
-                    archive.write(path, "業務ポータル/" + str(path.relative_to(ROOT)))
+        for item in sorted(base.rglob("*")):
+            if item.is_file():
+                archive.write(item, "業務ポータル/" + str(item.relative_to(base)))
         for name in FILES:
             archive.write(ROOT / "outlook" / name, "業務ポータル/outlook/" + name)
 

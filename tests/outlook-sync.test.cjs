@@ -59,7 +59,7 @@ test('only active selected user and valid incomplete tasks are eligible', () => 
 
 test('bundled shared sample parses without executing script code', () => {
   const h = helper();
-  const sample = fs.readFileSync('source/light/サンプルデータ/共有ダミーデータ.json', 'utf8');
+  const sample = fs.readFileSync('source/app/サンプルデータ/共有ダミーデータ.json', 'utf8');
   const data = h.parseJSON(sample);
   assert.equal(data.format,'personal-work-portal-shared');
   assert.ok(Array.isArray(data.tasks));

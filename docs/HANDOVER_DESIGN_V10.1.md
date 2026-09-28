@@ -25,7 +25,7 @@
 | `サンプルデータ` | 復元用ダミー、共有ダミー、空の共有JSON | 初期確認・導入用 |
 | `ドキュメント` | 導入・利用者・管理者・運用・受入確認 | 運用担当者向け |
 
-`release/` の既存v10.1作成VBSは安定版です。`source/light` と `source/dark` は、v10.1のデータ互換性を維持した最新HTML版です。追加の `release/Outlook連携インストーラー_latest.zip` は端末用ファイルのみ、`release/業務ポータル_latest_HTML_導入一式.zip` は最新HTMLと端末用ファイルの一式です。
+`release/` の既存v10.1作成VBSは安定版です。`source/app` は、v10.1のデータ互換性を維持し、1本のHTMLで配色を切り替える最新版です。`release/業務ポータル_一括インストーラー_latest.vbs` は自身と同じフォルダーへ最新HTMLと端末用ファイルを導入します。追加の `release/Outlook連携インストーラー_latest.zip` は端末用ファイルのみ、`release/業務ポータル_latest_HTML_導入一式.zip` は最新HTMLと端末用ファイルの一式です。
 
 ## 3. 実行環境と前提
 
@@ -42,7 +42,7 @@
 ```text
 index.html
  ├─ HTML: 画面・ダイアログ・一覧
- ├─ CSS: ライトテーマ、レスポンシブ表示、固定ヘッダー
+ ├─ CSS: ライト／ダークテーマ、レスポンシブ表示、固定ヘッダー
  └─ JavaScript
      ├─ IndexedDB / localStorage: 端末内状態
      ├─ File System Access API: 共有JSONの読込・保存
@@ -56,7 +56,7 @@ index.html
 
 外部ライブラリは使用しません。Excel出力はアプリ内の最小限のXLSX生成処理で作成します。
 
-最新HTML版のライト／ダークは両方の配色CSSを内蔵し、`html[data-theme]` と端末内の `localStorage` 設定で切り替えます。両版のJavaScriptは一致させ、既定の配色のみ異なります。Outlook連係はブラウザー内でOutlookを操作するのではなく、端末で初回設定したWindows Script Hostヘルパーを専用URLで起動します。ヘルパーの設定・入力検証・予定の整理手順は `outlook/README.md` を参照してください。
+最新HTML版は両方の配色CSSを内蔵し、`html[data-theme]` と端末内の `localStorage` 設定で切り替えます。編集元のHTMLは1本です。Outlook連係はブラウザー内でOutlookを操作するのではなく、端末で初回設定したWindows Script Hostヘルパーを専用URLで起動します。ヘルパーの設定・入力検証・予定の整理手順は `outlook/README.md` を参照してください。
 
 ## 5. 状態モデルと保存境界
 
@@ -209,7 +209,7 @@ users          1 ── * notifications.userId
 2. `index.html` を複製し、変更前後で共有JSON仕様が変わる場合は `SCHEMA_VERSION` と正規化処理を更新する。
 3. 共有項目を追加する場合は、`emptyState()`、`normalizeState()`、`sharedDataObject()`、サンプルJSON、設計書を同時に更新する。
 4. 日誌に関する変更は、共有JSONへ漏れないことを確認する。
-5. ライト版を基準にダーク版を再生成し、JavaScript部分が完全一致することを確認する。
+5. 単一HTMLでライト／ダークの表示とホームの選択状態を確認する。
 6. VBSを再生成し、実行展開後のファイルハッシュとHTML構文を検証する。
 7. 最低2端末で、通常保存、競合検知、再読込、日誌の非共有を確認する。
 
@@ -223,16 +223,19 @@ task-manager/
 ├─ release/
 │  ├─ 業務ポータル_v10_1_ライト・ダークVBS.zip
 │  ├─ 業務ポータル_v10_1_ライト作成.vbs
-│  └─ 業務ポータル_v10_1_ダーク作成.vbs
+│  ├─ 業務ポータル_v10_1_ダーク作成.vbs
+│  └─ 業務ポータル_一括インストーラー_latest.vbs
+├─ source/
+│  └─ app/index.html
 └─ checksums/
    └─ SHA256SUMS.txt
 ```
 
-将来、コードを継続保守する場合は、ライト版の `index.html` を唯一の編集元とし、ダーク版・VBS・ZIPを生成物として扱います。生成物の手編集は避けてください。
+将来、コードを継続保守する場合は、`source/app/index.html` を唯一の編集元とし、最新版VBS・ZIPを生成物として扱います。v10.1安定版の作成VBSは別物として保持します。生成物の手編集は避けてください。
 
 ## 15. 受入確認の最小セット
 
-1. ライト版とダーク版をEdgeで開ける。
+1. 1本のHTMLをEdgeで開き、ライト／ダークを切り替えられる。ホームの「自分／全体」がどちらの配色でも判別できる。
 2. タスク、案件、対応記録、日誌、マニュアル、リンクを追加・編集・削除・復元できる。
 3. タスク一覧の期限・進捗・担当者を直接変更できる。
 4. ホームで件数直下に対象タスクが表示され、見出しから絞込一覧へ移動できる。

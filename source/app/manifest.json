@@ -1,22 +1,22 @@
 {
-  "package": "業務ポータル 最新HTML版（v10.1互換） ダーク",
+  "package": "業務ポータル 最新HTML版（v10.1互換・配色切替）",
   "generatedAt": "2026-09-28",
   "files": {
     "index.html": {
-      "bytes": 293539,
-      "sha256": "fbe7c18d4f0f804b337a171781752fa8c6cf9843122c031f8d65d221c09e1ab6"
+      "bytes": 294042,
+      "sha256": "d0d9ad93ac657e08b8ff24441101ff48dc6b8372143c52de89df4a7e8517ca3e"
     },
     "icon.ico": {
       "bytes": 14376,
       "sha256": "8a5bd933f38a31d2415efe31ea447e35b7cd2b5f95a657a6ff77b77420b0da59"
     },
     "README.txt": {
-      "bytes": 1195,
-      "sha256": "be5fae75c9960bd752e48b4f8ca4eaff175861b19d0311f9209b17686370e053"
+      "bytes": 1379,
+      "sha256": "f2792d686a3267de5e305a29baf5702ec7162a8a0c2c0fdbfdebdad863e18ce1"
     },
     "ドキュメント/00_導入ガイド.txt": {
-      "bytes": 1278,
-      "sha256": "2d5356ab1971754f9e75937e4f19087cb4c12933bab3d41f145509eada5e0162"
+      "bytes": 1428,
+      "sha256": "edb7c0e137cbc55cc23e2b92773eb8ba873716f28fef69910f7ab5f99144561b"
     },
     "ドキュメント/01_利用者マニュアル.txt": {
       "bytes": 3055,

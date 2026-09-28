@@ -12,8 +12,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_latest.vbs"
+APP = ROOT / "source" / "app"
 SOURCES = [
-    *(p for theme in ("light", "dark") for p in sorted((ROOT / "source" / theme).rglob("*")) if p.is_file()),
+    *(p for p in sorted(APP.rglob("*")) if p.is_file()),
     *(p for p in sorted((ROOT / "outlook").iterdir()) if p.is_file()),
 ]
 
@@ -21,25 +22,22 @@ SOURCES = [
 HEADER = r'''Option Explicit
 ' Standalone installer for the latest HTML portal. Generated: do not edit by hand.
 ' The shared JSON and browser-local journal are never copied or overwritten.
-Dim fso, shell, stage, installDir, backupDir, oldMoved, edgePath, shortcut, answer
-Dim data, localBase, outlookInstaller, rc
+Dim fso, shell, stage, installDir, backupDir, installed, backed, answer
+Dim data, fileList, rel, outlookInstaller, rc
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
-localBase = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%")
-If localBase = "%LOCALAPPDATA%" Or Not fso.FolderExists(localBase) Then
-  MsgBox "端末内の保存先（LOCALAPPDATA）を取得できません。", vbCritical, "業務ポータルの導入"
-  WScript.Quit 1
-End If
-installDir = fso.BuildPath(localBase, "WorkPortal")
-If MsgBox("このWindows利用者に、最新版の業務ポータルを導入しますか？" & vbCrLf & _
+installDir = fso.GetParentFolderName(WScript.ScriptFullName)
+If MsgBox("このVBSと同じフォルダーに業務ポータルを導入しますか？" & vbCrLf & _
   "導入先：" & installDir & vbCrLf & _
-  "既存の共有JSONは変更しません。" & vbCrLf & _
-  "導入後、必要に応じて従来版Outlookとの連携を設定できます。", _
+  "同名の既存ファイルは別フォルダーに退避し、共有JSONは変更しません。" & vbCrLf & _
+  "別の場所で使っていた端末内データは自動移行されません。必要なら旧画面でバックアップしてください。", _
   vbYesNo + vbQuestion, "業務ポータルの導入") <> vbYes Then WScript.Quit 0
 On Error Resume Next
-stage = fso.BuildPath(localBase, "WorkPortal_stage_" & fso.GetTempName())
-backupDir = fso.BuildPath(localBase, "WorkPortal_backup_" & fso.GetTempName())
-oldMoved = False
+stage = fso.BuildPath(installDir, "業務ポータル_準備_" & fso.GetTempName())
+backupDir = fso.BuildPath(installDir, "業務ポータル_旧版_" & fso.GetTempName())
+Set installed = CreateObject("Scripting.Dictionary")
+Set backed = CreateObject("Scripting.Dictionary")
+fileList = ""
 fso.CreateFolder stage
 Check "一時フォルダーの作成"
 
@@ -52,12 +50,41 @@ Sub Check(label)
 End Sub
 
 Sub AbortInstall(detail)
+  Dim name, oldPath, newPath
   On Error Resume Next
+  For Each name In installed.Keys
+    newPath = fso.BuildPath(installDir, name)
+    If fso.FileExists(newPath) Then fso.DeleteFile newPath, True
+  Next
+  For Each name In backed.Keys
+    oldPath = fso.BuildPath(backupDir, name)
+    newPath = fso.BuildPath(installDir, name)
+    If fso.FileExists(oldPath) And Not fso.FileExists(newPath) Then fso.MoveFile oldPath, newPath
+  Next
   If stage <> "" Then If fso.FolderExists(stage) Then fso.DeleteFolder stage, True
-  If oldMoved And Not fso.FolderExists(installDir) Then fso.MoveFolder backupDir, installDir
   MsgBox "導入を中断しました：" & detail & vbCrLf & _
-    "以前のアプリを退避した場合、その保存先：" & backupDir, vbCritical, "業務ポータルの導入"
+    "退避済みのファイルがある場合、保存先：" & backupDir, vbCritical, "業務ポータルの導入"
   WScript.Quit 1
+End Sub
+
+Sub InstallFile(relativePath)
+  Dim fromPath, toPath, oldPath
+  On Error Resume Next
+  fromPath = fso.BuildPath(stage, relativePath)
+  toPath = fso.BuildPath(installDir, relativePath)
+  EnsureFolder fso.GetParentFolderName(toPath)
+  If fso.FileExists(toPath) Then
+    oldPath = fso.BuildPath(backupDir, relativePath)
+    EnsureFolder fso.GetParentFolderName(oldPath)
+    fso.MoveFile toPath, oldPath
+    Check "以前のファイルの退避：" & relativePath
+    backed.Add relativePath, True
+    Check "退避の記録：" & relativePath
+  End If
+  fso.MoveFile fromPath, toPath
+  Check "新しいファイルの配置：" & relativePath
+  installed.Add relativePath, True
+  Check "配置の記録：" & relativePath
 End Sub
 
 Sub EnsureFolder(folder)
@@ -98,30 +125,15 @@ End Sub
 
 FOOTER = r'''
 ' All files have been decoded and checked before replacing an existing install.
-If fso.FolderExists(installDir) Then
-  fso.MoveFolder installDir, backupDir
-  Check "以前のアプリの退避"
-  oldMoved = True
-End If
-fso.MoveFolder stage, installDir
-Check "新しいアプリへの切替"
+For Each rel In Split(fileList, vbLf)
+  If rel <> "" Then InstallFile rel
+Next
+fso.DeleteFolder stage, True
+Check "一時ファイルの片付け"
 stage = ""
 
-edgePath = shell.ExpandEnvironmentStrings("%ProgramFiles(x86)%") & "\Microsoft\Edge\Application\msedge.exe"
-If Not fso.FileExists(edgePath) Then edgePath = shell.ExpandEnvironmentStrings("%ProgramFiles%") & "\Microsoft\Edge\Application\msedge.exe"
-If fso.FileExists(edgePath) Then
-  Set shortcut = shell.CreateShortcut(fso.BuildPath(shell.SpecialFolders("Desktop"), "業務ポータル.lnk"))
-  shortcut.TargetPath = edgePath
-  shortcut.Arguments = Chr(34) & fso.BuildPath(installDir, "source\light\index.html") & Chr(34)
-  shortcut.WorkingDirectory = fso.BuildPath(installDir, "source\light")
-  shortcut.Description = "業務ポータル（ライト／ダーク切替対応）"
-  shortcut.IconLocation = fso.BuildPath(installDir, "source\light\icon.ico") & ",0"
-  shortcut.Save
-  Err.Clear ' A locked down Desktop must not invalidate the installed application.
-End If
-
 answer = MsgBox("アプリを次の場所に導入しました：" & vbCrLf & installDir & vbCrLf & _
-  "Microsoft Edgeで source\light\index.html を開いてください。" & vbCrLf & _
+  "同じフォルダーの index.html をMicrosoft Edgeで開いてください。" & vbCrLf & _
   "共同利用では、画面から既存の共有JSONを選択してください。本番用にサンプルを選ばないでください。" & vbCrLf & _
   "従来版Outlookとの連携を今すぐ設定しますか？", vbYesNo + vbQuestion, "業務ポータルの導入")
 If answer = vbYes Then
@@ -136,8 +148,8 @@ If answer = vbYes Then
       " で終了しました。後から outlook\Install_Outlook_Sync.vbs を実行できます。", vbExclamation, "業務ポータルの導入"
   End If
 End If
-If oldMoved Then
-  MsgBox "導入が完了しました。以前のアプリは次の場所に退避しました：" & vbCrLf & _
+If backed.Count > 0 Then
+  MsgBox "導入が完了しました。同名の旧ファイルは次の場所に退避しました：" & vbCrLf & _
     backupDir & vbCrLf & "共有JSONは変更していません。", vbInformation, "業務ポータルの導入"
 Else
   MsgBox "導入が完了しました。共有JSONは変更していません。", vbInformation, "業務ポータルの導入"
@@ -148,12 +160,13 @@ End If
 def main() -> None:
     lines = HEADER.splitlines()
     for path in SOURCES:
-        rel = path.relative_to(ROOT).as_posix().replace("/", "\\")
+        rel = (path.relative_to(APP) if path.is_relative_to(APP) else path.relative_to(ROOT)).as_posix().replace("/", "\\")
         payload = base64.b64encode(path.read_bytes()).decode("ascii")
         lines.extend(["", "data = \"\""])
         for offset in range(0, len(payload), 800):
             lines.append(f'data = data & "{payload[offset:offset + 800]}"')
         lines.append(f'Call SaveEmbedded("{rel}", {path.stat().st_size}, data)')
+        lines.append(f'fileList = fileList & "{rel}" & vbLf')
     lines.extend(FOOTER.splitlines())
     OUTPUT.write_bytes(("\ufeff" + "\r\n".join(lines) + "\r\n").encode("utf-16le"))
     sums = ROOT / "checksums" / "SHA256SUMS.txt"
