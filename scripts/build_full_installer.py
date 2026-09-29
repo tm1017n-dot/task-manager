@@ -12,10 +12,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_latest.vbs"
-VERSIONED_OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_20260929_r3.vbs"
+VERSIONED_OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_20260929_r4.vbs"
 PREVIOUS_OUTPUTS = [ROOT / "release" / name for name in (
     "業務ポータル_一括インストーラー_20260929.vbs",
     "業務ポータル_一括インストーラー_20260929_r2.vbs",
+    "業務ポータル_一括インストーラー_20260929_r3.vbs",
 )]
 APP = ROOT / "source" / "app"
 SOURCES = [
@@ -32,7 +33,7 @@ Dim data, fileList, rel, outlookInstaller, rc, edgePath, launcherNote
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 installDir = fso.GetParentFolderName(WScript.ScriptFullName)
-If MsgBox("業務ポータル一括インストーラー（2026年9月29日・第3版）" & vbCrLf & vbCrLf & _
+If MsgBox("業務ポータル一括インストーラー（2026年9月29日・第4版）" & vbCrLf & vbCrLf & _
   "このVBSと同じフォルダーに業務ポータルを導入しますか？" & vbCrLf & _
   "導入先：" & installDir & vbCrLf & _
   "同名の既存ファイルは別フォルダーに退避し、共有JSONは変更しません。" & vbCrLf & _

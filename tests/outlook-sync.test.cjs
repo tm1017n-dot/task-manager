@@ -3,8 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function helper() {
+function helper(onEnumerate = () => {}) {
   const context = { Enumerator: function (items) {
+    onEnumerate(items);
     let index = 0;
     this.atEnd = () => index >= items.length;
     this.item = () => items[index];
@@ -101,15 +102,22 @@ test('calendar sync is repeatable, updates dates, and asks before cleanup', () =
   assert.equal(c.Items.length,1);
   assert.equal(c.Items[0].BusyStatus,0);
   assert.equal(c.Items[0].Body,undefined);
+  let saves = 0;
+  const originalSave = c.Items[0].Save;
+  c.Items[0].Save = function () { saves++; return originalSave.call(this); };
   const someoneElse = c.Items.Add(1);
   someoneElse.UserProperties.Add('WorkPortalTaskId').Value = 'other-task';
   someoneElse.UserProperties.Add('WorkPortalUserId').Value = 'u-2';
   someoneElse.Save();
   result = h.syncCalendar(c,tasks,'u-1',shell);
   assert.equal(result.added,0);
-  assert.equal(result.updated,1);
+  assert.equal(result.updated,0);
+  assert.equal(result.skipped,1);
+  assert.equal(saves,0);
   tasks['t-1'].date = new Date(2026,9,1);
-  h.syncCalendar(c,tasks,'u-1',shell);
+  result = h.syncCalendar(c,tasks,'u-1',shell);
+  assert.equal(result.updated,1);
+  assert.equal(saves,1);
   assert.equal(c.Items[0].Start, h.oleDate(new Date(2026,9,1)));
   assert.equal(c.Items[0].End - c.Items[0].Start, 1);
   result = h.syncCalendar(c,{},'u-1',shell);
@@ -189,6 +197,29 @@ test('a save that cannot be read back is reported as failed', () => {
   assert.equal(result.added,0);
   assert.equal(result.failed,1);
   assert.match(result.details[0], /保存後の再読み取り/);
+});
+
+test('a large sync scans the calendar once before and once after the batch', () => {
+  const c = calendar();
+  let scans = 0;
+  const h = helper(items => { if (items === c.Items) scans++; });
+  for (let i = 0; i < 200; i++) {
+    const unrelated = c.Items.Add(1);
+    unrelated.Subject = '別の予定';
+    unrelated.Save();
+  }
+  const tasks = {};
+  for (let i = 0; i < 50; i++) tasks['t-' + i] = {title:'作業' + i, date:new Date(2026,8,30)};
+  const result = h.syncCalendar(c, tasks, 'u-1', {Popup() { throw new Error('unexpected dialog'); }});
+  assert.equal(scans, 2);
+  assert.equal(result.added, 50);
+  assert.equal(result.failed, 0);
+  assert.equal(c.Items.length, 250);
+  scans = 0;
+  const again = h.syncCalendar(c, tasks, 'u-1', {Popup() { throw new Error('unexpected dialog'); }});
+  assert.equal(scans, 1);
+  assert.equal(again.skipped, 50);
+  assert.equal(again.updated, 0);
 });
 
 test('the selected Outlook calendar is remembered and used on the next sync', () => {

@@ -11,7 +11,7 @@ from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = ROOT / "release" / "業務ポータル_一括インストーラー_latest.vbs"
-VERSIONED = ROOT / "release" / "業務ポータル_一括インストーラー_20260929_r3.vbs"
+VERSIONED = ROOT / "release" / "業務ポータル_一括インストーラー_20260929_r4.vbs"
 BLOCK = re.compile(
     r'data = ""\n((?:data = data & "[A-Za-z0-9+/=]+"\n)+)'
     r'Call SaveEmbedded\("([^"]+)", (\d+), data\)',
@@ -22,7 +22,7 @@ class FullInstallerTest(unittest.TestCase):
     def test_versioned_download_is_identical_and_has_clear_install_location(self) -> None:
         self.assertEqual(VERSIONED.read_bytes(), INSTALLER.read_bytes())
         source = VERSIONED.read_text(encoding="utf-16")
-        self.assertIn("2026年9月29日・第3版", source)
+        self.assertIn("2026年9月29日・第4版", source)
         self.assertIn('installDir = fso.GetParentFolderName(WScript.ScriptFullName)', source)
         self.assertIn('"導入先：" & installDir', source)
         expected = hashlib.sha256(VERSIONED.read_bytes()).hexdigest().upper()
