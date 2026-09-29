@@ -6,6 +6,7 @@ var REGISTRY = 'HKCU\\Software\\WorkPortalOutlook\\SharedJsonPath';
 var CALENDAR_REGISTRY = 'HKCU\\Software\\WorkPortalOutlook\\Calendar';
 var TAG = 'WorkPortalTaskId';
 var OWNER_TAG = 'WorkPortalUserId';
+var SNAPSHOT_TAG = 'WorkPortalSnapshot';
 var CALENDAR_NAME = '\u696d\u52d9\u30dd\u30fc\u30bf\u30eb';
 var FORMAT = 'personal-work-portal-shared';
 
@@ -130,6 +131,11 @@ function readUtf8(path) {
 function userProperty(item, name) {
   try { return item.UserProperties.Find(name); } catch (e) { return null; }
 }
+function taskSnapshot(task) {
+  var date = task.date;
+  return task.title.length + ':' + task.title + ':' +
+    date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+}
 function chooseCalendar(namespace, shell, userId, force) {
   var key = CALENDAR_REGISTRY, folder, entryId, storeId;
   if (!force) {
@@ -179,9 +185,15 @@ function readExisting(calendar, userId) {
 }
 function syncCalendar(calendar, tasks, userId, shell) {
   var current = readExisting(calendar, userId), existing = current.items;
-  var added = 0, updated = 0, stale = [], failed = 0, id, item, p, date, end, details = [], step, found, savedExample = '';
+  var added = 0, updated = 0, skipped = 0, stale = [], failed = 0, id, item, p, date, end, details = [], step, found, savedExample = '', snapshot;
+  var saved = {}, verified, scanFailed = false;
   for (id in tasks) if (Object.prototype.hasOwnProperty.call(tasks, id)) {
     try {
+      snapshot = taskSnapshot(tasks[id]);
+      if (Object.prototype.hasOwnProperty.call(existing, id)) {
+        p = userProperty(existing[id], SNAPSHOT_TAG);
+        if (p && String(p.Value) === snapshot) { skipped++; continue; }
+      }
       step = '\u4e88\u5b9a\u306e\u4f5c\u6210';
       // olAppointmentItem = 1. Use the item type rather than a custom form name.
       item = Object.prototype.hasOwnProperty.call(existing, id) ? existing[id] : calendar.Items.Add(1);
@@ -196,21 +208,37 @@ function syncCalendar(calendar, tasks, userId, shell) {
       p = userProperty(item, TAG); if (!p) p = item.UserProperties.Add(TAG, 1); p.Value = id;
       step = '\u5229\u7528\u8005ID\u306e\u8a2d\u5b9a';
       p = userProperty(item, OWNER_TAG); if (!p) p = item.UserProperties.Add(OWNER_TAG, 1); p.Value = userId;
+      step = '\u9023\u643a\u72b6\u614b\u306e\u8a2d\u5b9a';
+      p = userProperty(item, SNAPSHOT_TAG); if (!p) p = item.UserProperties.Add(SNAPSHOT_TAG, 1); p.Value = snapshot;
       step = '\u4e88\u5b9a\u306e\u4fdd\u5b58';
       item.Save();
       step = '\u4fdd\u5b58\u5148\u306e\u78ba\u8a8d';
       if (String(item.Parent.EntryID) !== String(calendar.EntryID)) {
-        step = '\u5c02\u7528\u4e88\u5b9a\u8868\u3078\u306e\u79fb\u52d5';
+        step = '\u9078\u629e\u3057\u305f\u4e88\u5b9a\u8868\u3078\u306e\u79fb\u52d5';
         item = item.Move(calendar);
         item.Save();
       }
-      step = '\u4fdd\u5b58\u5f8c\u306e\u518d\u8aad\u307f\u53d6\u308a';
-      found = readExisting(calendar, userId).items[id];
-      if (!found || String(found.EntryID) !== String(item.EntryID))
-        throw new Error('\u5c02\u7528\u4e88\u5b9a\u8868\u306b\u4e88\u5b9a\u3092\u78ba\u8a8d\u3067\u304d\u307e\u305b\u3093\u3002');
-      if (!savedExample) savedExample = String(found.Subject) + ' / ' + String(found.Start);
-      if (Object.prototype.hasOwnProperty.call(existing, id)) updated++; else added++;
+      saved[id] = {entryId:String(item.EntryID), updated:Object.prototype.hasOwnProperty.call(existing, id)};
     } catch (e) { failed++; details.push(id + '\uff08' + step + '\uff09: ' + (e.message || String(e))); }
+  }
+  // Outlook enumeration is expensive: verify the entire batch with one final scan.
+  var hasSaved = false;
+  for (id in saved) if (Object.prototype.hasOwnProperty.call(saved, id)) { hasSaved = true; break; }
+  try { if (hasSaved) verified = readExisting(calendar, userId).items; }
+  catch (readError) {
+    scanFailed = true;
+    for (id in saved) if (Object.prototype.hasOwnProperty.call(saved, id)) {
+      failed++; details.push(id + '\uff08\u4fdd\u5b58\u5f8c\u306e\u518d\u8aad\u307f\u53d6\u308a\uff09: ' + (readError.message || String(readError)));
+    }
+  }
+  if (!scanFailed) for (id in saved) if (Object.prototype.hasOwnProperty.call(saved, id)) {
+    found = verified[id];
+    if (!found || String(found.EntryID) !== saved[id].entryId) {
+      failed++; details.push(id + '\uff08\u4fdd\u5b58\u5f8c\u306e\u518d\u8aad\u307f\u53d6\u308a\uff09: \u9078\u629e\u3057\u305f\u4e88\u5b9a\u8868\u306b\u4e88\u5b9a\u3092\u78ba\u8a8d\u3067\u304d\u307e\u305b\u3093\u3002');
+      continue;
+    }
+    if (!savedExample) savedExample = String(found.Subject) + ' / ' + String(found.Start);
+    if (saved[id].updated) updated++; else added++;
   }
   for (id in existing) if (Object.prototype.hasOwnProperty.call(existing, id) &&
       !Object.prototype.hasOwnProperty.call(tasks, id)) stale.push(existing[id]);
@@ -223,7 +251,7 @@ function syncCalendar(calendar, tasks, userId, shell) {
       try { stale[i].Delete(); removed++; } catch (e2) { failed++; details.push('\u4e88\u5b9a\u306e\u524a\u9664\uff1a' + e2.message); }
     }
   }
-  return {added:added, updated:updated, removed:removed, pending:stale.length-removed,
+  return {added:added, updated:updated, skipped:skipped, removed:removed, pending:stale.length-removed,
     duplicates:current.duplicates, failed:failed, details:details, savedExample:savedExample};
 }
 function main() {
@@ -242,7 +270,7 @@ function main() {
   if (!selection) return;
   var calendar = selection.folder;
   var result = syncCalendar(calendar, tasks, userId, shell);
-  var message = '\u8ffd\u52a0\uff1a' + result.added + '\u4ef6\n\u66f4\u65b0\uff1a' + result.updated + '\u4ef6\n\u524a\u9664\uff1a' + result.removed +
+  var message = '\u8ffd\u52a0\uff1a' + result.added + '\u4ef6\n\u66f4\u65b0\uff1a' + result.updated + '\u4ef6\n\u5909\u66f4\u306a\u3057\uff08\u518d\u4fdd\u5b58\u7701\u7565\uff09\uff1a' + result.skipped + '\u4ef6\n\u524a\u9664\uff1a' + result.removed +
     '\u4ef6\n\u524a\u9664\u4fdd\u7559\uff1a' + result.pending + '\u4ef6\n\u91cd\u8907\u3092\u691c\u51fa\uff1a' + result.duplicates + '\u4ef6\n\u5931\u6557\uff1a' + result.failed + '\u4ef6';
   if (result.details.length) message += '\n\n' + result.details.slice(0, 5).join('\n');
   message += '\n\n\u4fdd\u5b58\u5148\uff1a' + String(calendar.FolderPath);
