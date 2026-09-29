@@ -11,6 +11,7 @@ from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = ROOT / "release" / "業務ポータル_一括インストーラー_latest.vbs"
+VERSIONED = ROOT / "release" / "業務ポータル_一括インストーラー_20260929.vbs"
 BLOCK = re.compile(
     r'data = ""\n((?:data = data & "[A-Za-z0-9+/=]+"\n)+)'
     r'Call SaveEmbedded\("([^"]+)", (\d+), data\)',
@@ -18,6 +19,16 @@ BLOCK = re.compile(
 
 
 class FullInstallerTest(unittest.TestCase):
+    def test_versioned_download_is_identical_and_has_clear_install_location(self) -> None:
+        self.assertEqual(VERSIONED.read_bytes(), INSTALLER.read_bytes())
+        source = VERSIONED.read_text(encoding="utf-16")
+        self.assertIn("2026年9月29日修正版", source)
+        self.assertIn('installDir = fso.GetParentFolderName(WScript.ScriptFullName)', source)
+        self.assertIn('"導入先：" & installDir', source)
+        expected = hashlib.sha256(VERSIONED.read_bytes()).hexdigest().upper()
+        self.assertIn(f"{expected}  {VERSIONED.name}",
+                      (ROOT / "checksums" / "SHA256SUMS.txt").read_text())
+
     def test_localized_vbs_dialogs(self) -> None:
         for file in (INSTALLER, ROOT / "outlook/Install_Outlook_Sync.vbs",
                      ROOT / "outlook/Uninstall_Outlook_Sync.vbs"):

@@ -12,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_latest.vbs"
+VERSIONED_OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_20260929.vbs"
 APP = ROOT / "source" / "app"
 SOURCES = [
     *(p for p in sorted(APP.rglob("*")) if p.is_file()),
@@ -27,7 +28,8 @@ Dim data, fileList, rel, outlookInstaller, rc, edgePath, launcherNote
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 installDir = fso.GetParentFolderName(WScript.ScriptFullName)
-If MsgBox("このVBSと同じフォルダーに業務ポータルを導入しますか？" & vbCrLf & _
+If MsgBox("業務ポータル一括インストーラー（2026年9月29日修正版）" & vbCrLf & vbCrLf & _
+  "このVBSと同じフォルダーに業務ポータルを導入しますか？" & vbCrLf & _
   "導入先：" & installDir & vbCrLf & _
   "同名の既存ファイルは別フォルダーに退避し、共有JSONは変更しません。" & vbCrLf & _
   "別の場所で使っていた端末内データは自動移行されません。必要なら旧画面でバックアップしてください。", _
@@ -210,10 +212,14 @@ def main() -> None:
         lines.append(f'Call SaveEmbedded("{rel}", {path.stat().st_size}, data)')
         lines.append(f'fileList = fileList & "{rel}" & vbLf')
     lines.extend(FOOTER.splitlines())
-    OUTPUT.write_bytes(("\ufeff" + "\r\n".join(lines) + "\r\n").encode("utf-16le"))
+    installer = ("\ufeff" + "\r\n".join(lines) + "\r\n").encode("utf-16le")
+    OUTPUT.write_bytes(installer)
+    VERSIONED_OUTPUT.write_bytes(installer)
     sums = ROOT / "checksums" / "SHA256SUMS.txt"
-    old = [line for line in sums.read_text().splitlines() if not line.endswith("  " + OUTPUT.name)]
-    old.append(f"{hashlib.sha256(OUTPUT.read_bytes()).hexdigest().upper()}  {OUTPUT.name}")
+    old = [line for line in sums.read_text().splitlines()
+           if not any(line.endswith("  " + path.name) for path in (OUTPUT, VERSIONED_OUTPUT))]
+    digest = hashlib.sha256(installer).hexdigest().upper()
+    old.extend(f"{digest}  {path.name}" for path in (OUTPUT, VERSIONED_OUTPUT))
     sums.write_text("\n".join(old) + "\n")
     print(f"{OUTPUT}: {len(SOURCES)} files, {OUTPUT.stat().st_size} bytes")
 
