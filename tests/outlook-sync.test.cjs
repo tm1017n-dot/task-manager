@@ -16,7 +16,8 @@ function helper() {
 }
 function calendar() {
   const list = [];
-  list.Add = () => {
+  list.Add = type => {
+    assert.equal(type, 1);
     const props = new Map();
     const item = {
       Class: 26,
@@ -74,7 +75,7 @@ test('sync errors and removal confirmation are shown in Japanese', () => {
   }};
   assert.throws(() => h.parseJSON('{'), /共有JSON/);
   assert.throws(() => h.desiredTasks({}, 'u-1'), /共有JSON/);
-  const old = c.Items.Add();
+  const old = c.Items.Add(1);
   old.UserProperties.Add('WorkPortalTaskId').Value = 't-1';
   old.UserProperties.Add('WorkPortalUserId').Value = 'u-1';
   old.Subject = '古い予定';
@@ -93,7 +94,7 @@ test('calendar sync is repeatable, updates dates, and asks before cleanup', () =
   assert.equal(c.Items.length,1);
   assert.equal(c.Items[0].BusyStatus,0);
   assert.equal(c.Items[0].Body,undefined);
-  const someoneElse = c.Items.Add();
+  const someoneElse = c.Items.Add(1);
   someoneElse.UserProperties.Add('WorkPortalTaskId').Value = 'other-task';
   someoneElse.UserProperties.Add('WorkPortalUserId').Value = 'u-2';
   someoneElse.Save();
@@ -110,4 +111,19 @@ test('calendar sync is repeatable, updates dates, and asks before cleanup', () =
   assert.equal(result.removed,1);
   assert.equal(c.Items.length,1);
   assert.equal(c.Items[0],someoneElse);
+});
+
+test('a failed Outlook operation identifies its stage and does not remove old appointments', () => {
+  const h = helper(), c = calendar();
+  const old = c.Items.Add(1);
+  old.UserProperties.Add('WorkPortalTaskId').Value = 'old-task';
+  old.UserProperties.Add('WorkPortalUserId').Value = 'u-1';
+  old.Save();
+  c.Items.Add = type => { assert.equal(type, 1); throw new Error('COM failure'); };
+  const result = h.syncCalendar(c, {'t-contract':{title:'契約',date:new Date(2026,8,30)}}, 'u-1',
+    {Popup() { throw new Error('cleanup must not run'); }});
+  assert.equal(result.failed, 1);
+  assert.match(result.details[0], /t-contract（予定の作成）: COM failure/);
+  assert.equal(result.removed, 0);
+  assert.equal(c.Items.length, 1);
 });

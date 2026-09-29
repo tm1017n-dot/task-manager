@@ -140,18 +140,24 @@ function readExisting(calendar, userId) {
 }
 function syncCalendar(calendar, tasks, userId, shell) {
   var current = readExisting(calendar, userId), existing = current.items;
-  var added = 0, updated = 0, stale = [], failed = 0, id, item, p, date, end, details = [];
+  var added = 0, updated = 0, stale = [], failed = 0, id, item, p, date, end, details = [], step;
   for (id in tasks) if (Object.prototype.hasOwnProperty.call(tasks, id)) {
     try {
-      item = Object.prototype.hasOwnProperty.call(existing, id) ? existing[id] : calendar.Items.Add('IPM.Appointment');
+      step = '\u4e88\u5b9a\u306e\u4f5c\u6210';
+      // olAppointmentItem = 1. Use the item type rather than a custom form name.
+      item = Object.prototype.hasOwnProperty.call(existing, id) ? existing[id] : calendar.Items.Add(1);
       date = tasks[id].date; end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+      step = '\u4ef6\u540d\u3068\u65e5\u4ed8\u306e\u8a2d\u5b9a';
       item.Subject = tasks[id].title; item.AllDayEvent = true;
       item.Start = date; item.End = end; item.BusyStatus = 0; item.ReminderSet = false;
-      p = userProperty(item, TAG); if (!p) p = item.UserProperties.Add(TAG, 1, false); p.Value = id;
-      p = userProperty(item, OWNER_TAG); if (!p) p = item.UserProperties.Add(OWNER_TAG, 1, false); p.Value = userId;
+      step = '\u30bf\u30b9\u30afID\u306e\u8a2d\u5b9a';
+      p = userProperty(item, TAG); if (!p) p = item.UserProperties.Add(TAG, 1); p.Value = id;
+      step = '\u5229\u7528\u8005ID\u306e\u8a2d\u5b9a';
+      p = userProperty(item, OWNER_TAG); if (!p) p = item.UserProperties.Add(OWNER_TAG, 1); p.Value = userId;
+      step = '\u4e88\u5b9a\u306e\u4fdd\u5b58';
       item.Save();
       if (Object.prototype.hasOwnProperty.call(existing, id)) updated++; else added++;
-    } catch (e) { failed++; details.push(id + ': ' + e.message); }
+    } catch (e) { failed++; details.push(id + '\uff08' + step + '\uff09: ' + (e.message || String(e))); }
   }
   for (id in existing) if (Object.prototype.hasOwnProperty.call(existing, id) &&
       !Object.prototype.hasOwnProperty.call(tasks, id)) stale.push(existing[id]);
