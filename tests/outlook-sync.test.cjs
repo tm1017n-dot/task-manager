@@ -103,7 +103,8 @@ test('calendar sync is repeatable, updates dates, and asks before cleanup', () =
   assert.equal(result.updated,1);
   tasks['t-1'].date = new Date(2026,9,1);
   h.syncCalendar(c,tasks,'u-1',shell);
-  assert.equal(c.Items[0].Start.getDate(),1);
+  assert.equal(c.Items[0].Start, h.oleDate(new Date(2026,9,1)));
+  assert.equal(c.Items[0].End - c.Items[0].Start, 1);
   result = h.syncCalendar(c,{},'u-1',shell);
   assert.equal(result.pending,1);
   shell.answer = 6;
@@ -126,4 +127,23 @@ test('a failed Outlook operation identifies its stage and does not remove old ap
   assert.match(result.details[0], /t-contract（予定の作成）: COM failure/);
   assert.equal(result.removed, 0);
   assert.equal(c.Items.length, 1);
+});
+
+test('date assignment uses COM date numbers and reports the exact failing property', () => {
+  const h = helper(), c = calendar();
+  const originalAdd = c.Items.Add;
+  c.Items.Add = type => {
+    const item = originalAdd(type);
+    Object.defineProperty(item, 'Start', {set(value) {
+      assert.equal(typeof value, 'number');
+      throw new Error('COM date rejected');
+    }});
+    return item;
+  };
+  const result = h.syncCalendar(c, {'t-contract':{title:'契約',date:new Date(2026,8,30)}}, 'u-1',
+    {Popup() { throw new Error('cleanup must not run'); }});
+  assert.equal(result.failed, 1);
+  assert.match(result.details[0], /t-contract（開始日の設定）: COM date rejected/);
+  assert.equal(h.oleDate(new Date(1899,11,30)), 0);
+  assert.equal(h.oleDate(new Date(2026,8,30)), 46295);
 });

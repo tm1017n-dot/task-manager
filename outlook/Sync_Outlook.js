@@ -89,6 +89,12 @@ function isoDate(value) {
   if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
   return date;
 }
+function oleDate(date) {
+  // Outlook's COM Date is days since 1899-12-30. Use UTC only to count
+  // calendar days; the integer passed to Outlook represents local midnight.
+  return (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) -
+    Date.UTC(1899, 11, 30)) / 86400000;
+}
 function safeId(value) {
   return typeof value === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(value) &&
     value !== '__proto__' && value !== 'constructor' && value !== 'prototype';
@@ -147,9 +153,12 @@ function syncCalendar(calendar, tasks, userId, shell) {
       // olAppointmentItem = 1. Use the item type rather than a custom form name.
       item = Object.prototype.hasOwnProperty.call(existing, id) ? existing[id] : calendar.Items.Add(1);
       date = tasks[id].date; end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-      step = '\u4ef6\u540d\u3068\u65e5\u4ed8\u306e\u8a2d\u5b9a';
-      item.Subject = tasks[id].title; item.AllDayEvent = true;
-      item.Start = date; item.End = end; item.BusyStatus = 0; item.ReminderSet = false;
+      step = '\u4ef6\u540d\u306e\u8a2d\u5b9a'; item.Subject = tasks[id].title;
+      step = '\u7d42\u65e5\u4e88\u5b9a\u306e\u8a2d\u5b9a'; item.AllDayEvent = true;
+      step = '\u958b\u59cb\u65e5\u306e\u8a2d\u5b9a'; item.Start = oleDate(date);
+      step = '\u7d42\u4e86\u65e5\u306e\u8a2d\u5b9a'; item.End = oleDate(end);
+      step = '\u4e88\u5b9a\u306a\u3057\u306e\u8a2d\u5b9a'; item.BusyStatus = 0;
+      step = '\u901a\u77e5\u306a\u3057\u306e\u8a2d\u5b9a'; item.ReminderSet = false;
       step = '\u30bf\u30b9\u30afID\u306e\u8a2d\u5b9a';
       p = userProperty(item, TAG); if (!p) p = item.UserProperties.Add(TAG, 1); p.Value = id;
       step = '\u5229\u7528\u8005ID\u306e\u8a2d\u5b9a';
