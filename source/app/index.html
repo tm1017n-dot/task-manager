@@ -599,7 +599,7 @@ html[data-theme="dark"] #homeScopeSwitch button:focus-visible{outline:2px solid 
       <div class="year-select"><label for="globalFiscalYear">年度</label><select id="globalFiscalYear"></select></div>
       <div class="year-select"><label for="currentUserSelect">自分</label><select id="currentUserSelect"><option value="">未設定</option></select></div>
       <div class="shared-status" id="sharedStatus"><span class="shared-dot"></span><span id="sharedStatusText">ローカル</span></div>
-      <div class="save-status" id="saveStatus" role="status" aria-live="polite"><span class="save-dot"></span><span id="saveStatusText">読み込み中</span></div><div class="top-actions"><button type="button" class="btn small" id="themeToggleBtn" aria-label="配色を切り替える">☾ ダーク</button><button type="button" class="btn small" id="outlookSyncBtn" title="自分の担当タスクをOutlookへ反映">Outlookへ反映</button><button type="button" class="btn small notification-button" id="notificationBtn" aria-label="通知" title="通知">🔔<span class="notification-badge hidden" id="notificationBadge">0</span></button><button class="btn small" id="quickJournalBtn">＋ 日誌</button></div>
+      <div class="save-status" id="saveStatus" role="status" aria-live="polite"><span class="save-dot"></span><span id="saveStatusText">読み込み中</span></div><div class="top-actions"><button type="button" class="btn small" id="themeToggleBtn" aria-label="配色を切り替える">☾ ダーク</button><button type="button" class="btn small" id="outlookCalendarBtn" title="連携先のOutlook予定表を選択">予定表選択</button><button type="button" class="btn small" id="outlookSyncBtn" title="自分の担当タスクをOutlookへ反映">Outlookへ反映</button><button type="button" class="btn small notification-button" id="notificationBtn" aria-label="通知" title="通知">🔔<span class="notification-badge hidden" id="notificationBadge">0</span></button><button class="btn small" id="quickJournalBtn">＋ 日誌</button></div>
     </header>
     <nav class="breadcrumb-bar hidden" id="breadcrumbBar" aria-label="現在位置"></nav>
     <div class="top-alerts hidden" id="topAlerts" aria-label="確認事項">
@@ -1160,6 +1160,11 @@ function applyTheme(theme){
   q('themeToggleBtn').setAttribute('aria-label',next==='dark'?'ライト版の配色に切り替える':'ダーク版の配色に切り替える');
 }
 function switchTheme(){const next=document.documentElement.dataset.theme==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,next);applyTheme(next)}
+function chooseOutlookCalendar(){
+  if(!currentUserId)return alert('先に上部の「自分」で利用者を選択してください。');
+  if(!/^[A-Za-z0-9_-]{1,100}$/.test(currentUserId))return alert('利用者IDが連係用の形式ではありません。');
+  window.location.href='workportal-outlook://choose/'+encodeURIComponent(currentUserId);
+}
 function syncOutlook(){
   if(!currentUserId)return alert('先に上部の「自分」で利用者を選択してください。');
   if(!/^[A-Za-z0-9_-]{1,100}$/.test(currentUserId))return alert('利用者IDが連係用の形式ではありません。');
@@ -1849,7 +1854,7 @@ const nrw=e.target.closest('[data-new-record-work]');if(nrw)openRecordForWork(nr
   q('currentUserSelect').addEventListener('change',()=>setCurrentUser(q('currentUserSelect').value));q('sharedCurrentUserSelect').addEventListener('change',()=>setCurrentUser(q('sharedCurrentUserSelect').value));
   q('connectSharedBtn').onclick=connectSharedFile;q('createSharedBtn').onclick=createSharedFile;q('reloadSharedBtn').onclick=reloadShared;q('disconnectSharedBtn').onclick=disconnectShared;q('addUserBtn').onclick=addUser;q('newUserName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addUser()}});
   q('journalShareActivity').addEventListener('change',()=>q('journalSharedCommentField').classList.toggle('hidden',!q('journalShareActivity').checked));
-  q('themeToggleBtn').onclick=switchTheme;q('outlookSyncBtn').onclick=syncOutlook;
+  q('themeToggleBtn').onclick=switchTheme;q('outlookCalendarBtn').onclick=chooseOutlookCalendar;q('outlookSyncBtn').onclick=syncOutlook;
   q('notificationBtn').onclick=openNotificationCenter;q('markAllNotificationsBtn').onclick=markAllNotificationsRead;q('quickJournalBtn').onclick=()=>openJournal();q('newJournalBtn').onclick=()=>openJournal();q('newTaskBtn').onclick=()=>openTask();q('calendarTaskBtn').onclick=()=>openTask();q('newCaseBtn').onclick=()=>openCase();q('newRecordBtn').onclick=()=>openRecord();q('newManualBtn').onclick=()=>openManual();q('newWorkBtn').onclick=()=>openWork();q('newLinkBtn').onclick=()=>openLink();q('newRepeatBtn').onclick=()=>openRepeat();q('manageWorkCategoriesBtn').onclick=openWorkCategoryManager;q('addWorkCategoryBtn').onclick=addWorkCategory;q('workCategoryFilter').addEventListener('change',renderWorks);q('ganttCategoryFilter').addEventListener('change',renderGantt);
   q('newWorkCategoryName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addWorkCategory()}});q('journalForm').addEventListener('submit',saveJournalForm);q('journalDeleteBtn').onclick=deleteJournal;q('journalTaskId').addEventListener('change',()=>{journalStatusTouched=true;syncJournalTaskContext()});q('journalStatusAfter').addEventListener('change',()=>{journalStatusTouched=true});q('journalMonth').addEventListener('change',renderJournals);q('journalWorkFilter').addEventListener('change',renderJournals);q('journalTaskOnly').addEventListener('change',renderJournals);q('taskForm').addEventListener('submit',saveTaskForm);q('workForm').addEventListener('submit',saveWorkForm);q('caseForm').addEventListener('submit',saveCaseForm);q('recordForm').addEventListener('submit',saveRecordForm);q('manualForm').addEventListener('submit',saveManualForm);q('linkForm').addEventListener('submit',saveLinkForm);q('repeatForm').addEventListener('submit',saveRepeatForm);
   q('taskDeleteBtn').onclick=deleteTask;q('workDeleteBtn').onclick=deleteWork;q('caseDeleteBtn').onclick=deleteCase;q('recordDeleteBtn').onclick=deleteRecord;q('manualDeleteBtn').onclick=deleteManual;q('linkDeleteBtn').onclick=deleteLink;q('repeatDeleteBtn').onclick=deleteRepeat;q('addChecklistBtn').onclick=addChecklistRow;q('repeatType').onchange=renderRepeatTypeFields;

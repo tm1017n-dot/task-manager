@@ -16,6 +16,8 @@ function helper() {
 }
 function calendar() {
   const list = [];
+  const folder = {Items:list, EntryID:'portal-calendar', FolderPath:'\\\\mailbox\\予定表\\業務ポータル',
+    StoreID:'mailbox-1', DefaultItemType:1, displayCount:0, Display() { this.displayCount++; }};
   list.Add = type => {
     assert.equal(type, 1);
     const props = new Map();
@@ -25,12 +27,17 @@ function calendar() {
         Find: name => props.get(name) || null,
         Add: name => { const p = { Value: '' }; props.set(name, p); return p; }
       },
+      Parent:folder,
+      EntryID:'appointment-' + (list.length + 1),
       Save() { if (!list.includes(this)) list.push(this); },
+      Move(destination) { const old = this.Parent.Items, index = old.indexOf(this);
+        if (index >= 0) old.splice(index, 1); this.Parent = destination;
+        destination.Items.push(this); return this; },
       Delete() { list.splice(list.indexOf(this), 1); }
     };
     return item;
   };
-  return { Items: list };
+  return folder;
 }
 
 test('strict JSON parsing rejects executable expressions and malformed data', () => {
@@ -146,4 +153,80 @@ test('date assignment uses COM date numbers and reports the exact failing proper
   assert.match(result.details[0], /t-contract（開始日の設定）: COM date rejected/);
   assert.equal(h.oleDate(new Date(1899,11,30)), 0);
   assert.equal(h.oleDate(new Date(2026,8,30)), 46295);
+});
+
+test('a saved item outside the portal calendar is moved and verified before counting', () => {
+  const h = helper(), c = calendar(), defaultCalendar = calendar();
+  defaultCalendar.EntryID = 'default-calendar';
+  const originalAdd = c.Items.Add;
+  c.Items.Add = type => {
+    const item = originalAdd(type);
+    item.Parent = defaultCalendar;
+    item.Save = function () {
+      if (!this.Parent.Items.includes(this)) this.Parent.Items.push(this);
+    };
+    return item;
+  };
+  const result = h.syncCalendar(c, {'t-contract':{title:'契約',date:new Date(2026,8,30)}}, 'u-1',
+    {Popup() { throw new Error('unexpected dialog'); }});
+  assert.equal(result.added,1);
+  assert.equal(result.failed,0);
+  assert.equal(defaultCalendar.Items.length,0);
+  assert.equal(c.Items.length,1);
+  assert.equal(c.Items[0].Parent,c);
+});
+
+test('a save that cannot be read back is reported as failed', () => {
+  const h = helper(), c = calendar();
+  const originalAdd = c.Items.Add;
+  c.Items.Add = type => {
+    const item = originalAdd(type);
+    item.Save = () => {};
+    return item;
+  };
+  const result = h.syncCalendar(c, {'t-contract':{title:'契約',date:new Date(2026,8,30)}}, 'u-1',
+    {Popup() { throw new Error('unexpected dialog'); }});
+  assert.equal(result.added,0);
+  assert.equal(result.failed,1);
+  assert.match(result.details[0], /保存後の再読み取り/);
+});
+
+test('the selected Outlook calendar is remembered and used on the next sync', () => {
+  const h = helper(), selected = calendar(), values = new Map();
+  const shell = {Popup() { return 1; }, RegRead(key) {
+    if (!values.has(key)) throw new Error('missing');
+    return values.get(key);
+  }, RegWrite(key, value) { values.set(key, value); }};
+  const namespace = {
+    picks:0,
+    PickFolder() { this.picks++; return selected; },
+    GetFolderFromID(id, store) {
+      assert.equal(id,selected.EntryID); assert.equal(store,selected.StoreID);
+      return selected;
+    },
+    GetDefaultFolder() { return {Folders:{Item() { throw new Error('no legacy folder'); }}}; }
+  };
+  assert.equal(h.chooseCalendar(namespace,shell,'u-1',false).folder,selected);
+  assert.equal(h.chooseCalendar(namespace,shell,'u-1',false).folder,selected);
+  assert.equal(namespace.picks,1);
+  assert.equal(h.targetRequest('workportal-outlook://choose/u-1').choose,true);
+  assert.equal(h.targetRequest('workportal-outlook://sync/u-1').choose,false);
+});
+
+test('changing the destination moves only the current user’s tagged appointments', () => {
+  const h = helper(), legacy = calendar(), target = calendar();
+  legacy.EntryID = 'old-calendar'; target.EntryID = 'new-calendar';
+  const owned = legacy.Items.Add(1);
+  owned.UserProperties.Add('WorkPortalTaskId').Value = 't-contract';
+  owned.UserProperties.Add('WorkPortalUserId').Value = 'u-1'; owned.Save();
+  const other = legacy.Items.Add(1);
+  other.UserProperties.Add('WorkPortalTaskId').Value = 'other';
+  other.UserProperties.Add('WorkPortalUserId').Value = 'u-2'; other.Save();
+  const namespace = {PickFolder:()=>target, GetDefaultFolder:()=>({Folders:{Item:()=>legacy}})};
+  const shell = {Popup:()=>1, RegWrite() {}};
+  const selection = h.chooseCalendar(namespace,shell,'u-1',true);
+  assert.equal(selection.migrated,1);
+  assert.equal(target.Items.length,1);
+  assert.equal(target.Items[0],owned);
+  assert.deepEqual([...legacy.Items],[other]);
 });

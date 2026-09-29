@@ -38,4 +38,4 @@ activityLogは共有JSONへ保存し、新しい順に全件表示します。�
 users：利用者。workCategories：大分類。works：業務。tasks：タスク。cases：案件。journalEntries：個人業務日誌。records：対応記録。manuals：業務マニュアル。links：リンク。repeatRules：定期タスク設定。activityLog：共有活動。notifications：アプリ内通知。trash：削除済みデータ。
 
 ■ 最新HTML版の配色・Outlook補助機能
-両テーマのHTMLに同じJavaScriptと両配色CSSを含め、html[data-theme]とlocalStorageで表示を切り替えます。Outlookボタンは専用URLを端末へ渡し、端末用ヘルパーが共有JSONを読んで従来版Outlookの個人用予定表へ反映します。アプリ本体は外部APIへ通信しません。予定表はMicrosoft 365のメールボックスへ同期され得ます。
+両テーマのHTMLに同じJavaScriptと両配色CSSを含め、html[data-theme]とlocalStorageで表示を切り替えます。Outlookボタンは専用URLを端末へ渡し、端末用ヘルパーが共有JSONを読んで従来版Outlookで選択した予定表へ反映します。予定表のEntryIDとStoreIDは端末の現在のWindows利用者のレジストリに保存します。アプリ本体は外部APIへ通信しません。予定表はMicrosoft 365のメールボックスへ同期され得ます。

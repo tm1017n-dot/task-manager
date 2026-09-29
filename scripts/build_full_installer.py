@@ -12,8 +12,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_latest.vbs"
-VERSIONED_OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_20260929_r2.vbs"
-PREVIOUS_OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_20260929.vbs"
+VERSIONED_OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_20260929_r3.vbs"
+PREVIOUS_OUTPUTS = [ROOT / "release" / name for name in (
+    "業務ポータル_一括インストーラー_20260929.vbs",
+    "業務ポータル_一括インストーラー_20260929_r2.vbs",
+)]
 APP = ROOT / "source" / "app"
 SOURCES = [
     *(p for p in sorted(APP.rglob("*")) if p.is_file()),
@@ -29,7 +32,7 @@ Dim data, fileList, rel, outlookInstaller, rc, edgePath, launcherNote
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 installDir = fso.GetParentFolderName(WScript.ScriptFullName)
-If MsgBox("業務ポータル一括インストーラー（2026年9月29日・第2版）" & vbCrLf & vbCrLf & _
+If MsgBox("業務ポータル一括インストーラー（2026年9月29日・第3版）" & vbCrLf & vbCrLf & _
   "このVBSと同じフォルダーに業務ポータルを導入しますか？" & vbCrLf & _
   "導入先：" & installDir & vbCrLf & _
   "同名の既存ファイルは別フォルダーに退避し、共有JSONは変更しません。" & vbCrLf & _
@@ -218,7 +221,7 @@ def main() -> None:
     VERSIONED_OUTPUT.write_bytes(installer)
     sums = ROOT / "checksums" / "SHA256SUMS.txt"
     old = [line for line in sums.read_text().splitlines()
-           if not any(line.endswith("  " + path.name) for path in (OUTPUT, VERSIONED_OUTPUT, PREVIOUS_OUTPUT))]
+           if not any(line.endswith("  " + path.name) for path in (OUTPUT, VERSIONED_OUTPUT, *PREVIOUS_OUTPUTS))]
     digest = hashlib.sha256(installer).hexdigest().upper()
     old.extend(f"{digest}  {path.name}" for path in (OUTPUT, VERSIONED_OUTPUT))
     sums.write_text("\n".join(old) + "\n")

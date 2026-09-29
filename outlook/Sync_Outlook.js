@@ -1,7 +1,9 @@
 // Windows Script Host JScript. Keep this file ASCII for WSH on Japanese Windows.
 // The browser sends only a user ID; the shared JSON path comes from the local installer.
 var PROTOCOL = 'workportal-outlook://sync/';
+var CHOOSE_PROTOCOL = 'workportal-outlook://choose/';
 var REGISTRY = 'HKCU\\Software\\WorkPortalOutlook\\SharedJsonPath';
+var CALENDAR_REGISTRY = 'HKCU\\Software\\WorkPortalOutlook\\Calendar';
 var TAG = 'WorkPortalTaskId';
 var OWNER_TAG = 'WorkPortalUserId';
 var CALENDAR_NAME = '\u696d\u52d9\u30dd\u30fc\u30bf\u30eb';
@@ -74,13 +76,15 @@ function parseJSON(text) {
   return result;
 }
 
-function targetUser(argument) {
-  if (argument.substr(0, PROTOCOL.length).toLowerCase() !== PROTOCOL) throw new Error('\u8d77\u52d5\u30ea\u30f3\u30af\u304c\u6b63\u3057\u304f\u3042\u308a\u307e\u305b\u3093\u3002');
+function targetRequest(argument) {
+  var choose = argument.substr(0, CHOOSE_PROTOCOL.length).toLowerCase() === CHOOSE_PROTOCOL;
+  var prefix = choose ? CHOOSE_PROTOCOL : PROTOCOL;
+  if (argument.substr(0, prefix.length).toLowerCase() !== prefix) throw new Error('\u8d77\u52d5\u30ea\u30f3\u30af\u304c\u6b63\u3057\u304f\u3042\u308a\u307e\u305b\u3093\u3002');
   var id;
-  try { id = decodeURIComponent(argument.substr(PROTOCOL.length).replace(/\/$/, '')); }
+  try { id = decodeURIComponent(argument.substr(prefix.length).replace(/\/$/, '')); }
   catch (e) { throw new Error('\u8d77\u52d5\u30ea\u30f3\u30af\u306e\u5229\u7528\u8005ID\u3092\u8aad\u307f\u53d6\u308c\u307e\u305b\u3093\u3002'); }
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error('\u5229\u7528\u8005ID\u304c\u6b63\u3057\u304f\u3042\u308a\u307e\u305b\u3093\u3002');
-  return id;
+  return {userId:id, choose:choose};
 }
 function isoDate(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -126,10 +130,39 @@ function readUtf8(path) {
 function userProperty(item, name) {
   try { return item.UserProperties.Find(name); } catch (e) { return null; }
 }
-function createCalendar(outlook) {
-  var root = outlook.GetNamespace('MAPI').GetDefaultFolder(9);
-  try { return root.Folders.Item(CALENDAR_NAME); }
-  catch (e) { return root.Folders.Add(CALENDAR_NAME, 9); }
+function chooseCalendar(namespace, shell, userId, force) {
+  var key = CALENDAR_REGISTRY, folder, entryId, storeId;
+  if (!force) {
+    try {
+      entryId = shell.RegRead(key + 'EntryID'); storeId = shell.RegRead(key + 'StoreID');
+      folder = namespace.GetFolderFromID(entryId, storeId);
+      if (Number(folder.DefaultItemType) !== 1) throw new Error('not a calendar');
+      return {folder:folder, migrated:0};
+    } catch (e) { /* Missing or inaccessible calendar: ask the user again. */ }
+  }
+  shell.Popup('\u9023\u643a\u5148\u306eOutlook\u4e88\u5b9a\u8868\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\u3002\u30e1\u30fc\u30eb\u7b49\u306e\u30d5\u30a9\u30eb\u30c0\u30fc\u306f\u9078\u3079\u307e\u305b\u3093\u3002', 0,
+    '\u696d\u52d9\u30dd\u30fc\u30bf\u30eb\uff1aOutlook\u9023\u643a', 64);
+  folder = namespace.PickFolder();
+  if (!folder) return null;
+  if (Number(folder.DefaultItemType) !== 1) throw new Error('\u4e88\u5b9a\u8868\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\u3002\u4ed6\u306e\u7a2e\u985e\u306e\u30d5\u30a9\u30eb\u30c0\u30fc\u306b\u306f\u53cd\u6620\u3057\u307e\u305b\u3093\u3002');
+  var migrated = migrateLegacyCalendar(namespace, folder, userId);
+  shell.RegWrite(key + 'EntryID', String(folder.EntryID), 'REG_SZ');
+  shell.RegWrite(key + 'StoreID', String(folder.StoreID), 'REG_SZ');
+  return {folder:folder, migrated:migrated};
+}
+function migrateLegacyCalendar(namespace, destination, userId) {
+  var legacy;
+  try { legacy = namespace.GetDefaultFolder(9).Folders.Item(CALENDAR_NAME); }
+  catch (e) { return 0; }
+  if (String(legacy.EntryID) === String(destination.EntryID) &&
+      String(legacy.StoreID) === String(destination.StoreID)) return 0;
+  var old = readExisting(legacy, userId).items, current = readExisting(destination, userId).items;
+  var id, moved = 0;
+  for (id in old) if (Object.prototype.hasOwnProperty.call(old, id) &&
+      !Object.prototype.hasOwnProperty.call(current, id)) {
+    old[id].Move(destination); moved++;
+  }
+  return moved;
 }
 function readExisting(calendar, userId) {
   var items = {}, duplicates = 0, item, id, owner, en = new Enumerator(calendar.Items);
@@ -146,7 +179,7 @@ function readExisting(calendar, userId) {
 }
 function syncCalendar(calendar, tasks, userId, shell) {
   var current = readExisting(calendar, userId), existing = current.items;
-  var added = 0, updated = 0, stale = [], failed = 0, id, item, p, date, end, details = [], step;
+  var added = 0, updated = 0, stale = [], failed = 0, id, item, p, date, end, details = [], step, found, savedExample = '';
   for (id in tasks) if (Object.prototype.hasOwnProperty.call(tasks, id)) {
     try {
       step = '\u4e88\u5b9a\u306e\u4f5c\u6210';
@@ -165,6 +198,17 @@ function syncCalendar(calendar, tasks, userId, shell) {
       p = userProperty(item, OWNER_TAG); if (!p) p = item.UserProperties.Add(OWNER_TAG, 1); p.Value = userId;
       step = '\u4e88\u5b9a\u306e\u4fdd\u5b58';
       item.Save();
+      step = '\u4fdd\u5b58\u5148\u306e\u78ba\u8a8d';
+      if (String(item.Parent.EntryID) !== String(calendar.EntryID)) {
+        step = '\u5c02\u7528\u4e88\u5b9a\u8868\u3078\u306e\u79fb\u52d5';
+        item = item.Move(calendar);
+        item.Save();
+      }
+      step = '\u4fdd\u5b58\u5f8c\u306e\u518d\u8aad\u307f\u53d6\u308a';
+      found = readExisting(calendar, userId).items[id];
+      if (!found || String(found.EntryID) !== String(item.EntryID))
+        throw new Error('\u5c02\u7528\u4e88\u5b9a\u8868\u306b\u4e88\u5b9a\u3092\u78ba\u8a8d\u3067\u304d\u307e\u305b\u3093\u3002');
+      if (!savedExample) savedExample = String(found.Subject) + ' / ' + String(found.Start);
       if (Object.prototype.hasOwnProperty.call(existing, id)) updated++; else added++;
     } catch (e) { failed++; details.push(id + '\uff08' + step + '\uff09: ' + (e.message || String(e))); }
   }
@@ -180,11 +224,11 @@ function syncCalendar(calendar, tasks, userId, shell) {
     }
   }
   return {added:added, updated:updated, removed:removed, pending:stale.length-removed,
-    duplicates:current.duplicates, failed:failed, details:details};
+    duplicates:current.duplicates, failed:failed, details:details, savedExample:savedExample};
 }
 function main() {
   if (WScript.Arguments.length !== 1) throw new Error('\u30dd\u30fc\u30bf\u30eb\u306e\u300cOutlook\u3078\u53cd\u6620\u300d\u30dc\u30bf\u30f3\u304b\u3089\u8d77\u52d5\u3057\u3066\u304f\u3060\u3055\u3044\u3002');
-  var userId = targetUser(String(WScript.Arguments.Item(0)));
+  var request = targetRequest(String(WScript.Arguments.Item(0))), userId = request.userId;
   var shell = new ActiveXObject('WScript.Shell');
   var path;
   try { path = shell.RegRead(REGISTRY); }
@@ -194,10 +238,20 @@ function main() {
   var outlook;
   try { outlook = new ActiveXObject('Outlook.Application'); }
   catch (e2) { throw new Error('\u5f93\u6765\u7248Outlook\u3092\u8d77\u52d5\u3067\u304d\u307e\u305b\u3093\u3002\u30a4\u30f3\u30b9\u30c8\u30fc\u30eb\u3068\u5229\u7528\u74b0\u5883\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002'); }
-  var result = syncCalendar(createCalendar(outlook), tasks, userId, shell);
+  var selection = chooseCalendar(outlook.GetNamespace('MAPI'), shell, userId, request.choose);
+  if (!selection) return;
+  var calendar = selection.folder;
+  var result = syncCalendar(calendar, tasks, userId, shell);
   var message = '\u8ffd\u52a0\uff1a' + result.added + '\u4ef6\n\u66f4\u65b0\uff1a' + result.updated + '\u4ef6\n\u524a\u9664\uff1a' + result.removed +
     '\u4ef6\n\u524a\u9664\u4fdd\u7559\uff1a' + result.pending + '\u4ef6\n\u91cd\u8907\u3092\u691c\u51fa\uff1a' + result.duplicates + '\u4ef6\n\u5931\u6557\uff1a' + result.failed + '\u4ef6';
   if (result.details.length) message += '\n\n' + result.details.slice(0, 5).join('\n');
+  message += '\n\n\u4fdd\u5b58\u5148\uff1a' + String(calendar.FolderPath);
+  if (selection.migrated) message += '\n\u5f93\u6765\u306e\u5c02\u7528\u4e88\u5b9a\u8868\u304b\u3089\u79fb\u52d5\uff1a' + selection.migrated + '\u4ef6';
+  if (result.savedExample) message += '\n\u78ba\u8a8d\u3057\u305f\u4e88\u5b9a\u306e\u4e00\u4f8b\uff1a' + result.savedExample;
+  if (result.added || result.updated) {
+    try { calendar.Display(); }
+    catch (displayError) { message += '\n\u4e88\u5b9a\u8868\u3092\u81ea\u52d5\u3067\u958b\u3051\u307e\u305b\u3093\u3067\u3057\u305f\u3002Outlook\u306e\u4e88\u5b9a\u8868\u4e00\u89a7\u304b\u3089\u300c\u696d\u52d9\u30dd\u30fc\u30bf\u30eb\u300d\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\u3002'; }
+  }
   shell.Popup(message, 0, '\u696d\u52d9\u30dd\u30fc\u30bf\u30eb\uff1aOutlook\u9023\u643a', result.failed ? 16 : 64);
 }
 if (typeof WScript !== 'undefined') {

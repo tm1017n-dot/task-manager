@@ -3,8 +3,8 @@
   "generatedAt": "2026-09-28",
   "files": {
     "index.html": {
-      "bytes": 294669,
-      "sha256": "3c06aa7e02e11d49f69befdb2b555d9e2871423399a11158dfe423ba2989ac09"
+      "bytes": 295214,
+      "sha256": "94cf451851cafdd63268e2912e73c9f51650d7b2b9e1eaf0da0ce0b40e6e6b45"
     },
     "icon.ico": {
       "bytes": 14376,
@@ -19,16 +19,16 @@
       "sha256": "37ef99e5a0520b314a042628cb510e4e688ae2aea40ba93470dc363f36e8333a"
     },
     "ドキュメント/01_利用者マニュアル.txt": {
-      "bytes": 3055,
-      "sha256": "179ea566034fecf1275f8a1af64fe00b79215e5421e181a64607bc56d1b8b164"
+      "bytes": 3185,
+      "sha256": "793d59eee34b36fcc7403352b603f74b5a2ef055d0261f575ce8714cef5ca495"
     },
     "ドキュメント/02_管理者・共同利用マニュアル.txt": {
       "bytes": 2095,
       "sha256": "9954b78104757181f1d495ae01911e300dadf33b167c88948dc64f6210124a23"
     },
     "ドキュメント/03_設計書.txt": {
-      "bytes": 3154,
-      "sha256": "6ec4d4cd81870db45df1fce91a75b0a12c72f821dba3d76d7408cd2d05f60528"
+      "bytes": 3262,
+      "sha256": "1af2ca7153e58c7e860b2f454ac873837634f4dd7332c0c523d722877d4106bc"
     },
     "ドキュメント/04_運用・保守マニュアル.txt": {
       "bytes": 1735,

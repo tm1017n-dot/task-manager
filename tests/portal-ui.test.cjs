@@ -8,6 +8,7 @@ const app = fs.readFileSync('source/app/index.html', 'utf8');
 test('one HTML carries both palettes and a visible dark scope selection', () => {
   assert.match(app, /id="themeToggleBtn"/);
   assert.match(app, /id="outlookSyncBtn"/);
+  assert.match(app, /id="outlookCalendarBtn"/);
   assert.match(app, /html\[data-theme="dark"\]/);
   assert.match(app, /html\[data-theme="light"\]/);
   assert.match(app, /html\[data-theme="dark"\] #homeScopeSwitch button\.active\{background:#a6b9ff;color:#101a36/);
@@ -46,4 +47,6 @@ test('theme switch persists and Outlook button hands off only an ID', () => {
   assert.equal(store.get('personal_work_portal_theme'),'dark');
   context.syncOutlook();
   assert.equal(context.window.location.href,'workportal-outlook://sync/u-1');
+  context.chooseOutlookCalendar();
+  assert.equal(context.window.location.href,'workportal-outlook://choose/u-1');
 });
