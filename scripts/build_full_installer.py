@@ -12,16 +12,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_latest.vbs"
-VERSIONED_OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_20260929_r4.vbs"
+VERSIONED_OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_20261002.vbs"
+TEXT_OUTPUT = ROOT / "release" / "業務ポータル_一括インストーラー_20261002.txt"
 PREVIOUS_OUTPUTS = [ROOT / "release" / name for name in (
     "業務ポータル_一括インストーラー_20260929.vbs",
     "業務ポータル_一括インストーラー_20260929_r2.vbs",
     "業務ポータル_一括インストーラー_20260929_r3.vbs",
+    "業務ポータル_一括インストーラー_20260929_r4.vbs",
 )]
 APP = ROOT / "source" / "app"
 SOURCES = [
     *(p for p in sorted(APP.rglob("*")) if p.is_file()),
     *(p for p in sorted((ROOT / "outlook").iterdir()) if p.is_file()),
+    *(p for p in sorted((ROOT / "native").iterdir()) if p.is_file()),
 ]
 
 
@@ -33,7 +36,7 @@ Dim data, fileList, rel, outlookInstaller, rc, edgePath, launcherNote
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 installDir = fso.GetParentFolderName(WScript.ScriptFullName)
-If MsgBox("業務ポータル一括インストーラー（2026年9月29日・第4版）" & vbCrLf & vbCrLf & _
+If MsgBox("業務ポータル一括インストーラー（2026年10月2日版）" & vbCrLf & vbCrLf & _
   "このVBSと同じフォルダーに業務ポータルを導入しますか？" & vbCrLf & _
   "導入先：" & installDir & vbCrLf & _
   "同名の既存ファイルは別フォルダーに退避し、共有JSONは変更しません。" & vbCrLf & _
@@ -134,6 +137,21 @@ Sub CreatePortalShortcut()
   If Not fso.FileExists(target) Then AbortInstall "ショートカットを保存できませんでした。"
 End Sub
 
+Sub RegisterFolderHandler()
+  Dim root, helperPath, command, wscriptExe
+  On Error Resume Next
+  root = "HKCU\Software\Classes\workportal-folder\"
+  helperPath = fso.BuildPath(installDir, "native\Open_Folder.js")
+  wscriptExe = shell.ExpandEnvironmentStrings("%SystemRoot%") & "\System32\wscript.exe"
+  command = Chr(34) & wscriptExe & Chr(34) & " " & Chr(34) & helperPath & Chr(34) & " " & Chr(34) & "%1" & Chr(34)
+  shell.RegWrite root, "URL:業務ポータル フォルダーを開く", "REG_SZ"
+  Check "フォルダー起動の登録"
+  shell.RegWrite root & "URL Protocol", "", "REG_SZ"
+  Check "フォルダー起動方式の登録"
+  shell.RegWrite root & "shell\open\command\", command, "REG_SZ"
+  Check "フォルダー起動コマンドの登録"
+End Sub
+
 Sub EnsureFolder(folder)
   On Error Resume Next
   If fso.FolderExists(folder) Then Exit Sub
@@ -176,6 +194,7 @@ For Each rel In Split(fileList, vbLf)
   If rel <> "" Then InstallFile rel
 Next
 CreatePortalShortcut
+RegisterFolderHandler
 fso.DeleteFolder stage, True
 Check "一時ファイルの片付け"
 stage = ""
@@ -220,11 +239,12 @@ def main() -> None:
     installer = ("\ufeff" + "\r\n".join(lines) + "\r\n").encode("utf-16le")
     OUTPUT.write_bytes(installer)
     VERSIONED_OUTPUT.write_bytes(installer)
+    TEXT_OUTPUT.write_bytes(installer)
     sums = ROOT / "checksums" / "SHA256SUMS.txt"
     old = [line for line in sums.read_text().splitlines()
-           if not any(line.endswith("  " + path.name) for path in (OUTPUT, VERSIONED_OUTPUT, *PREVIOUS_OUTPUTS))]
+           if not any(line.endswith("  " + path.name) for path in (OUTPUT, VERSIONED_OUTPUT, TEXT_OUTPUT, *PREVIOUS_OUTPUTS))]
     digest = hashlib.sha256(installer).hexdigest().upper()
-    old.extend(f"{digest}  {path.name}" for path in (OUTPUT, VERSIONED_OUTPUT))
+    old.extend(f"{digest}  {path.name}" for path in (OUTPUT, VERSIONED_OUTPUT, TEXT_OUTPUT))
     sums.write_text("\n".join(old) + "\n")
     print(f"{OUTPUT}: {len(SOURCES)} files, {OUTPUT.stat().st_size} bytes")
 
