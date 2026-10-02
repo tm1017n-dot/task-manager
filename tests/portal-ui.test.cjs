@@ -84,6 +84,7 @@ test('folder links hand off an encoded path while Web links still open in a tab'
     {id:'web',target:'https://example.com/',category:'Web'}]};
   const opened = [];
   const ctx = {state,byId:(arr,id)=>arr.find(x=>x.id===id),
+    linkCategoryKind:name=>name==='共有フォルダ'?'folder':['Web','庁内システム'].includes(name)?'web':'any',
     window:{location:{href:''},open:(...args)=>opened.push(args)},toast:()=>{throw new Error('unexpected toast')}};
   vm.createContext(ctx);
   const begin = app.indexOf('function isWebTarget(');
@@ -93,4 +94,32 @@ test('folder links hand off an encoded path while Web links still open in a tab'
   assert.equal(ctx.window.location.href,'workportal-folder://open/'+encodeURIComponent(target));
   ctx.useLink('web');
   assert.equal(opened[0][0],'https://example.com/');
+});
+
+test('link category dropdown always includes shared folders and keeps custom categories', () => {
+  assert.match(app, /<select id="linkCategory">/);
+  assert.doesNotMatch(app, /list="linkCategorySuggestions"/);
+  const elements = {
+    linkCategory:{innerHTML:'',value:'Web'},
+    linkCategoryCustom:{value:'',required:false,classList:{toggle(name,hidden){this.hidden=hidden;}}}
+  };
+  const ctx = {q:id=>elements[id],state:{links:[{category:'庁内資料'}]},
+    categoryNames:()=>['共有フォルダ','庁内システム','Web','資料','その他','庁内資料'],
+    esc:x=>String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;')};
+  vm.createContext(ctx);
+  vm.runInContext(app.slice(app.indexOf('function fillLinkCategorySelect('),app.indexOf("function openLink(id=")),ctx);
+  ctx.fillLinkCategorySelect('Web');
+  assert.match(elements.linkCategory.innerHTML, /value="共有フォルダ">共有フォルダ/);
+  assert.match(elements.linkCategory.innerHTML, /value="庁内資料">庁内資料/);
+  assert.equal(elements.linkCategory.value,'Web');
+  elements.linkCategory.value='共有フォルダ';
+  ctx.toggleLinkCategoryInput();
+  assert.equal(ctx.selectedLinkCategory(),'共有フォルダ');
+  assert.equal(elements.linkCategoryCustom.required,false);
+  ctx.fillLinkCategorySelect('既存の独自分類');
+  assert.equal(elements.linkCategory.value,'既存の独自分類');
+  elements.linkCategory.value='';elements.linkCategoryCustom.value=' 新しい分類 ';
+  ctx.toggleLinkCategoryInput();
+  assert.equal(elements.linkCategoryCustom.required,true);
+  assert.equal(ctx.selectedLinkCategory(),'新しい分類');
 });
