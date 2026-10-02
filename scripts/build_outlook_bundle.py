@@ -26,7 +26,7 @@ def main() -> None:
     path = base / "manifest.json"
     manifest = json.loads(path.read_text())
     manifest["package"] = "業務ポータル 最新HTML版（v10.1互換・配色切替）"
-    manifest["generatedAt"] = "2026-09-28"
+    manifest["generatedAt"] = "2026-10-02"
     for name in manifest["files"]:
         item = base / name
         manifest["files"][name] = {"bytes": item.stat().st_size, "sha256": digest(item)}
@@ -44,6 +44,9 @@ def main() -> None:
                 archive.write(item, "業務ポータル/" + str(item.relative_to(base)))
         for name in FILES:
             archive.write(ROOT / "outlook" / name, "業務ポータル/outlook/" + name)
+        for item in sorted((ROOT / "native").iterdir()):
+            if item.is_file():
+                archive.write(item, "業務ポータル/native/" + item.name)
 
     checksum_file = ROOT / "checksums" / "SHA256SUMS.txt"
     lines = [line for line in checksum_file.read_text().splitlines()

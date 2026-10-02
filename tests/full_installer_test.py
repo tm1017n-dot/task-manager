@@ -11,7 +11,7 @@ from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = ROOT / "release" / "業務ポータル_一括インストーラー_latest.vbs"
-VERSIONED = ROOT / "release" / "業務ポータル_一括インストーラー_20260929_r4.vbs"
+VERSIONED = ROOT / "release" / "業務ポータル_一括インストーラー_20261002.vbs"
 BLOCK = re.compile(
     r'data = ""\n((?:data = data & "[A-Za-z0-9+/=]+"\n)+)'
     r'Call SaveEmbedded\("([^"]+)", (\d+), data\)',
@@ -22,7 +22,8 @@ class FullInstallerTest(unittest.TestCase):
     def test_versioned_download_is_identical_and_has_clear_install_location(self) -> None:
         self.assertEqual(VERSIONED.read_bytes(), INSTALLER.read_bytes())
         source = VERSIONED.read_text(encoding="utf-16")
-        self.assertIn("2026年9月29日・第4版", source)
+        self.assertIn("2026年10月2日版", source)
+        self.assertEqual(VERSIONED.with_suffix('.txt').read_bytes(), INSTALLER.read_bytes())
         self.assertIn('installDir = fso.GetParentFolderName(WScript.ScriptFullName)', source)
         self.assertIn('"導入先：" & installDir', source)
         expected = hashlib.sha256(VERSIONED.read_bytes()).hexdigest().upper()
@@ -48,8 +49,8 @@ class FullInstallerTest(unittest.TestCase):
             chunks = re.findall(r'data = data & "([A-Za-z0-9+/=]+)"', lines)
             self.assertTrue(all(len(chunk) <= 800 for chunk in chunks))
             payload = base64.b64decode("".join(chunks), validate=True)
-            path = (ROOT / "outlook" / Path(name.replace("\\", "/")).name
-                    if name.startswith("outlook\\") else
+            path = (ROOT / Path(name.replace("\\", "/"))
+                    if name.startswith(("outlook\\", "native\\")) else
                     ROOT / "source" / "app" / Path(name.replace("\\", "/")))
             self.assertEqual(payload, path.read_bytes(), name)
             self.assertEqual(len(payload), int(expected_size), name)
@@ -61,9 +62,15 @@ class FullInstallerTest(unittest.TestCase):
         } | {
             str(path.relative_to(ROOT)).replace("/", "\\")
             for path in (ROOT / "outlook").rglob("*") if path.is_file()
+        } | {
+            str(path.relative_to(ROOT)).replace("/", "\\")
+            for path in (ROOT / "native").rglob("*") if path.is_file()
         }
         self.assertEqual(found, source_paths)
         self.assertIn("index.html", found)
+        self.assertIn("native\\Open_Folder.js", found)
+        self.assertIn('HKCU\\Software\\Classes\\workportal-folder\\', source)
+        self.assertIn('CreatePortalShortcut\nRegisterFolderHandler', source)
         self.assertEqual(sum(name.endswith("index.html") for name in found), 1)
         self.assertIn("installDir = fso.GetParentFolderName(WScript.ScriptFullName)", source)
         self.assertNotIn('installDir = fso.BuildPath(localBase, "WorkPortal")', source)
@@ -92,6 +99,7 @@ class FullInstallerTest(unittest.TestCase):
             self.assertEqual([n for n in names if n.endswith("/index.html")],
                              ["業務ポータル/index.html"])
             self.assertIn("業務ポータル/outlook/Sync_Outlook.js", names)
+            self.assertIn("業務ポータル/native/Open_Folder.js", names)
 
 
 if __name__ == "__main__":

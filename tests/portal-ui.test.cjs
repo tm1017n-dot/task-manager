@@ -50,3 +50,47 @@ test('theme switch persists and Outlook button hands off only an ID', () => {
   context.chooseOutlookCalendar();
   assert.equal(context.window.location.href,'workportal-outlook://choose/u-1');
 });
+
+test('master order survives normalization and moves only within the work category', async () => {
+  const state = {workCategories:[{id:'a',name:'総務'},{id:'b',name:'検診'}],
+    works:[{id:'w1',name:'予算',categoryId:'a'}, {id:'w2',name:'契約',categoryId:'a'},
+      {id:'w3',name:'集計',categoryId:'b'}]};
+  let saves = 0;
+  const ctx = {state, uid:()=>{throw new Error('unexpected new ID')},
+    byId:(arr,id)=>arr.find(x=>x.id===id), workCategory:w=>state.workCategories.find(c=>c.id===w?.categoryId),
+    workCategoryId:w=>w?.categoryId||'', nowIso:()=> '2026-10-02T00:00:00Z',
+    persist:async()=>{saves++;return true}, logActivity:()=>{}, refreshRelationOptions:()=>{},
+    renderAll:()=>{},renderWorkCategoryManager:()=>{},toast:()=>{},esc:x=>String(x)};
+  vm.createContext(ctx);
+  vm.runInContext(app.slice(app.indexOf('function normalizeWorkCategory('),app.indexOf('function normalizeTask(')),ctx);
+  const first = state.works.filter(x=>x.categoryId==='a').sort(ctx.compareMasterOrder);
+  await ctx.moveMaster('works', first[1].id, -1);
+  assert.equal(saves,1);
+  assert.equal(state.works.find(x=>x.id===first[1].id).sortOrder,0);
+  assert.equal(state.works.find(x=>x.id==='w3').sortOrder,undefined);
+  const restored = state.works.map(x=>ctx.normalizeWork(JSON.parse(JSON.stringify(x))));
+  assert.equal(restored.filter(x=>x.categoryId==='a').sort(ctx.compareMasterOrder)[0].id,first[1].id);
+  const cats = state.workCategories.slice().sort(ctx.compareMasterOrder);
+  await ctx.moveMaster('workCategories',cats[1].id,-1);
+  assert.equal(state.workCategories.slice().sort(ctx.compareMasterOrder)[0].id,cats[1].id);
+  assert.equal(restored.slice().sort(ctx.compareWorkOrder)[0].categoryId,cats[1].id);
+  await ctx.moveMaster('workCategories',cats[1].id,-1);
+  assert.equal(saves,2);
+});
+
+test('folder links hand off an encoded path while Web links still open in a tab', () => {
+  const target = '\\\\server\\share\\日本語 & 100% #資料';
+  const state = {links:[{id:'folder',target,category:'共有フォルダ'},
+    {id:'web',target:'https://example.com/',category:'Web'}]};
+  const opened = [];
+  const ctx = {state,byId:(arr,id)=>arr.find(x=>x.id===id),
+    window:{location:{href:''},open:(...args)=>opened.push(args)},toast:()=>{throw new Error('unexpected toast')}};
+  vm.createContext(ctx);
+  const begin = app.indexOf('function isWebTarget(');
+  const end = app.indexOf('\n',app.indexOf('function useLink(',begin));
+  vm.runInContext(app.slice(begin,end),ctx);
+  ctx.useLink('folder');
+  assert.equal(ctx.window.location.href,'workportal-folder://open/'+encodeURIComponent(target));
+  ctx.useLink('web');
+  assert.equal(opened[0][0],'https://example.com/');
+});
